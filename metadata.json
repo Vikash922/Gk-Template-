@@ -1,0 +1,6 @@
+{
+  "name": "GK Card Maker",
+  "description": "Create engaging GK question cards with high-resolution 16:9 PNG export, authentic reference styling, and Devanagari typography support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

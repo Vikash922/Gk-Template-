@@ -1,70 +1,92 @@
-# GK Card Maker
+<div align="center">
 
-A specialized, mobile-first web application for generating high-resolution General Knowledge (GK) question cards in the exact visual style of reference television and educational quiz formats.
+# 🌟 GK Card Maker Pro
 
-## 🎯 Design Source of Truth
+<img src="https://capsule-render.vercel.app/api?type=waving&color=timeGradient&height=200&section=header&text=GK%20Card%20Maker&fontSize=60&fontAlignY=35&desc=AI-Powered%20Educational%20Content%20Creator&descAlignY=55&descAlign=50" width="100%" alt="Header Banner" />
 
-The card follows a fixed 16:9 aspect ratio rendered at 1920×1080:
-- **Outer Frame**: Dark canvas border with a bold, rounded green outer border (`#16a34a`).
-- **Inner Separation**: Clean spacing band separating the border from the pristine white card surface.
-- **Top Question Box**: Rounded rectangular header with lime-to-yellow gradient background (`#84cc16` to `#facc15`) and a solid black border.
-- **Devanagari Typography**:
-  - Question number highlighted in bold **Red** (`#dc2626`).
-  - Question text rendered in an authentic 4-color gradient (Red → Magenta → Purple → Blue) using **Noto Sans Devanagari**.
-  - Intelligent auto-fitting engine prevents character or matra clipping.
-- **Four Vertical Options (A, B, C, D)**:
-  - Yellow background cards (`#fef08a`) with orange/red borders (`#ea580c`) and bold black lettering.
-- **Right Visual Subject**:
-  - Dedicated transparent clipart/illustration zone (Tiger, Blue Jeans, Human Skeleton, Drinking Water, etc.) that never overlaps options.
-- **Correct Answer**:
-  - Stored locally for quiz tracking, but strictly omitted from generated PNG cards.
+**The Ultimate AI-Powered General Knowledge Flashcard Generator.**
 
----
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](#)
+[![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](#)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](#)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](#)
+[![PWA Ready](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](#)
 
-## 🚀 Key Features
+</div>
 
-1. **Live Preview & Client-Side PNG Export**
-   - Instant live preview in 16:9 ratio.
-   - 1-click download as `GK-Question-04.png` at 1920×1080 (or 1280×720).
-   - Direct "Copy Image" to clipboard.
+<br />
 
-2. **Hindi & English Typography Auto-Fit**
-   - Native support for Hindi, English, and Hinglish.
-   - Dynamic scale-down engine prevents long questions or options from overflowing.
-
-3. **Curated Transparent Clipart & AI Image Generator**
-   - Built-in library of transparent SVG assets.
-   - Automatic topic extraction with prompt generator for transparent educational cutouts.
-   - Custom image drag-and-drop & file upload support (PNG, JPG, WEBP).
-
-4. **Batch Card Generator & ZIP Export**
-   - Paste multiline text questions in standard numbering format.
-   - Generates all cards with progress indication.
-   - 1-click batch download as `GK-Cards.zip` using JSZip.
-
-5. **Local Persistence & Backup**
-   - Works 100% offline without login.
-   - JSON export and import for seamless backup and dataset transfer.
+> **GK Card Maker Pro** is a visually stunning, fully offline-capable Progressive Web App (PWA) designed to craft high-quality, professional educational flashcards in seconds. Supercharged with Google's Gemini AI, it generates questions and 3D clipart directly in your browser.
 
 ---
 
-## 🛠️ Development & Build
+## 🎨 Premium Features
+
+<table>
+  <tr>
+    <td>
+      <h3>💎 Glassmorphic 3D UI</h3>
+      <p>Experience a buttery smooth, lag-free interface with stunning frosted glass effects, modern drop-shadows, and a clean, minimalist design.</p>
+    </td>
+    <td>
+      <h3>🤖 On-Device AI Brain</h3>
+      <p>Powered by <b>Gemini 3.8 Flash</b> and <b>Imagen 3.0</b>. Generate full quizzes and photorealistic 3D clipart directly from your browser—no backend server required!</p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h3>⚡ Fully Offline (PWA)</h3>
+      <p>Install it as a Native App on your Android or iOS device! Create, edit, and export your flashcards anywhere, anytime, completely offline.</p>
+    </td>
+    <td>
+      <h3>🚀 Ultra-Fast Canvas Export</h3>
+      <p>Export your beautifully designed cards into crisp, high-resolution, watermark-free PNGs instantly using optimized HTML5 Canvas rasterization.</p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 18, Vite, TypeScript
+- **Styling:** Tailwind CSS (v4) with Custom Glassmorphism
+- **AI Integration:** `@google/genai` (Runs 100% Client-Side)
+- **Icons & Assets:** Lucide React
+- **Architecture:** Offline-First PWA (Progressive Web App)
+
+---
+
+## 🚀 Quick Start
+
+Want to run this premium tool on your own machine? It's as easy as 1-2-3!
 
 ```bash
-# Install dependencies
+# 1. Clone the repository
+git clone https://github.com/Vikash922/Gk-Template-.git
+
+# 2. Navigate to the project directory
+cd Gk-Template-
+
+# 3. Install dependencies
 npm install
 
-# Start Vite development server
+# 4. Start the lightning-fast dev server
 npm run dev
-
-# Compile production build
-npm run build
 ```
 
-## ⚙️ Environment Variables
+---
 
-Optionally set `GEMINI_API_KEY` for AI question generation and Gemini visual generation:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-*(If no API key is provided, the application runs fully offline with its rich curated question bank and transparent clipart assets.)*
+## ⚙️ AI Configuration
+
+To unlock the power of AI generation:
+1. Open the **Settings** menu in the app.
+2. Enter your **Google Gemini API Key**.
+3. *Note: The key is securely saved in your browser's local storage and is never sent to any external server other than Google.*
+
+---
+
+<div align="center">
+  <p>Crafted with ❤️ for Educators & Creators.</p>
+</div>

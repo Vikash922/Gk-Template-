@@ -7,6 +7,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(() => {
   return {
     base: '/Gk-Template-/',
+    define: {
+      'process.env': {}
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -28,7 +31,8 @@ export default defineConfig(() => {
           ]
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          sourcemap: false
         }
       })
     ],

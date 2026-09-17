@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
+    base: '/Gk-Template-/',
     plugins: [
       react(),
       tailwindcss(),

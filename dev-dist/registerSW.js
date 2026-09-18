@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/Gk-Template-/dev-sw.js?dev-sw', { scope: '/Gk-Template-/', type: 'classic' })

@@ -13,6 +13,7 @@ import {
 } from './services/storage';
 import { Navbar, AppTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
+import { VideoStudio } from './components/VideoStudio';
 import { CardPreview } from './components/CardPreview';
 import { QuestionForm } from './components/QuestionForm';
 import { ImageControls } from './components/ImageControls';
@@ -504,6 +505,13 @@ export default function App() {
                 setCurrentTab('editor');
               }}
             />
+          </div>
+        )}
+
+        {/* TAB: VIDEO */}
+        {currentTab === 'video' && (
+          <div className="max-w-6xl mx-auto py-2 sm:py-4">
+            <VideoStudio />
           </div>
         )}
 

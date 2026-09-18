@@ -131,7 +131,7 @@ export async function generateRelatedImage(
   // 1. Try Curated Assets First
   const curatedMatch = findCuratedAssetByQuery(targetTopic);
   if (curatedMatch) {
-    return { imageUrl: curatedMatch.dataUri, isAi: false, usedCurated: true };
+    return { imageUrl: curatedMatch.svgDataUri, isAi: false, usedCurated: true };
   }
 
   // 2. Try Gemini Text-to-Image
@@ -183,7 +183,7 @@ export async function generateImageWithPrompt(
 
   // Curated asset fallback
   const matched = findCuratedAssetByQuery(prompt);
-  return { imageUrl: matched.dataUri, isAi: false };
+  return { imageUrl: matched.svgDataUri, isAi: false };
 }
 
 /**

@@ -70,7 +70,8 @@ export async function renderCardToCanvas(
   question: GKQuestion,
   config: CardDesignConfig,
   targetWidth: number = 1920,
-  targetHeight: number = 1080
+  targetHeight: number = 1080,
+  highlightCorrectAnswer: boolean = false
 ): Promise<void> {
   // Ensure custom font is ready before measuring and drawing
   if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
@@ -228,9 +229,11 @@ export async function renderCardToCanvas(
     // By default, draw option box unless explicitly unchecked by user (showOptionBoxes === false)
     const shouldDrawBox = mergedConfig.showOptionBoxes !== false;
 
+    const isCorrect = highlightCorrectAnswer && question.correctAnswer && opt.key.endsWith(question.correctAnswer);
+
     if (shouldDrawBox) {
       roundRectPath(ctx, opt.x, opt.y, opt.width, opt.height, opt.radius);
-      ctx.fillStyle = mergedConfig.optionBgColor || '#fff000';
+      ctx.fillStyle = isCorrect ? '#22c55e' : (mergedConfig.optionBgColor || '#fff000');
       ctx.fill();
       if (mergedConfig.optionBorderWidth > 0) {
         ctx.lineWidth = mergedConfig.optionBorderWidth;
@@ -268,11 +271,11 @@ export async function renderCardToCanvas(
         ctx.save();
         ctx.beginPath();
         ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
-        ctx.fillStyle = mergedConfig.optionLetterBgColor || '#dc2626';
+        ctx.fillStyle = isCorrect ? '#ffffff' : (mergedConfig.optionLetterBgColor || '#dc2626');
         ctx.fill();
 
         ctx.font = `900 ${Math.round(circleR * 1.2)}px sans-serif`;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isCorrect ? '#22c55e' : '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(letterChar, circleX, circleY + 1);
@@ -289,11 +292,11 @@ export async function renderCardToCanvas(
 
         ctx.save();
         roundRectPath(ctx, pillX, pillY, pillW, pillH, 10);
-        ctx.fillStyle = mergedConfig.optionLetterBgColor || '#dc2626';
+        ctx.fillStyle = isCorrect ? '#ffffff' : (mergedConfig.optionLetterBgColor || '#dc2626');
         ctx.fill();
 
         ctx.font = `900 ${Math.round(pillH * 0.58)}px sans-serif`;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isCorrect ? '#22c55e' : '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(letterChar, pillX + pillW / 2, pillY + pillH / 2 + 1);
@@ -305,7 +308,7 @@ export async function renderCardToCanvas(
         // Crisp Text Prefix 'A.'
         const prefixStr = `${letterChar}. `;
         ctx.font = `${optFontWeight} ${mergedConfig.optionBaseFontSize}px "${optFontFamily}", sans-serif`;
-        ctx.fillStyle = mergedConfig.optionLetterColor || '#dc2626';
+        ctx.fillStyle = isCorrect ? '#ffffff' : (mergedConfig.optionLetterColor || '#dc2626');
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
 
@@ -331,7 +334,7 @@ export async function renderCardToCanvas(
     );
 
     ctx.font = `${optFontWeight} ${optFontSize}px "${optFontFamily}", sans-serif`;
-    ctx.fillStyle = mergedConfig.optionTextColor || '#000000';
+    ctx.fillStyle = isCorrect ? '#ffffff' : (mergedConfig.optionTextColor || '#000000');
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
 

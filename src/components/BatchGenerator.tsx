@@ -83,7 +83,7 @@ export function parseQuestionsText(text: string): GKQuestion[] {
 
   blocks.forEach((block, idx) => {
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-    if (lines.length < 2) return;
+    if (lines.length === 0) return;
 
     let qLine = lines[0];
     let qNumber = idx + 1;

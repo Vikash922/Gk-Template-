@@ -5,13 +5,14 @@ import {
   Bookmark,
   Layers,
   Settings as SettingsIcon,
+  Film,
   Home,
   LayoutTemplate,
   Wand2,
   Image as ImageIcon,
 } from 'lucide-react';
 
-export type AppTab = 'home' | 'editor' | 'batch' | 'templates' | 'settings';
+export type AppTab = 'home' | 'editor' | 'batch' | 'templates' | 'settings' | 'video';
 interface NavbarProps {
   currentTab: AppTab;
   onChangeTab: (tab: AppTab) => void;
@@ -85,6 +86,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               Templates
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onChangeTab('video')}
+              className={`text-sm font-medium transition-colors ${
+                currentTab === 'video' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Video Studio
             </button>
 
           </nav>
@@ -163,6 +174,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <Sparkles className="w-4 h-4" />
           <span className="text-[10px]">Create</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChangeTab('video')}
+          className={`flex-1 min-h-[44px] flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
+            currentTab === 'video' ? 'text-emerald-600 font-bold' : 'text-slate-500'
+          }`}
+        >
+          <Film className="w-4 h-4" />
+          <span className="text-[10px]">Video</span>
         </button>
 
 

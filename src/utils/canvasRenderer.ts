@@ -71,7 +71,8 @@ export async function renderCardToCanvas(
   config: CardDesignConfig,
   targetWidth: number = 1920,
   targetHeight: number = 1080,
-  highlightCorrectAnswer: boolean = false
+  highlightCorrectAnswer: boolean = false,
+  activeDashedOption?: 'A' | 'B' | 'C' | 'D' | string | null
 ): Promise<void> {
   // Ensure custom font is ready before measuring and drawing
   if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
@@ -230,15 +231,30 @@ export async function renderCardToCanvas(
     const shouldDrawBox = mergedConfig.showOptionBoxes !== false;
 
     const isCorrect = highlightCorrectAnswer && question.correctAnswer && opt.key.endsWith(question.correctAnswer);
+    const isDashed = Boolean(
+      activeDashedOption &&
+      (activeDashedOption === opt.letter || opt.key.endsWith(activeDashedOption) || opt.letter.startsWith(activeDashedOption))
+    );
 
     if (shouldDrawBox) {
       roundRectPath(ctx, opt.x, opt.y, opt.width, opt.height, opt.radius);
-      ctx.fillStyle = isCorrect ? '#22c55e' : (mergedConfig.optionBgColor || '#fff000');
+      ctx.fillStyle = isCorrect ? '#00e600' : (mergedConfig.optionBgColor || '#fff000');
       ctx.fill();
       if (mergedConfig.optionBorderWidth > 0) {
         ctx.lineWidth = mergedConfig.optionBorderWidth;
         ctx.strokeStyle = mergedConfig.optionBorderColor || '#e11d48';
         ctx.stroke();
+      }
+
+      // Draw red dashed highlight outline around the box when active (like in reference video)
+      if (isDashed && !isCorrect) {
+        ctx.save();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#dc2626';
+        ctx.setLineDash([12, 7]);
+        roundRectPath(ctx, opt.x - 3, opt.y - 3, opt.width + 6, opt.height + 6, opt.radius + 2);
+        ctx.stroke();
+        ctx.restore();
       }
     }
 

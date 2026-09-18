@@ -1,5 +1,6 @@
 import { GKQuestion, CardStats } from '../types/question';
 import { INITIAL_QUESTIONS } from '../constants/sampleQuestions';
+import { sanitizeString, isSafeImageUrl } from '../utils/validation';
 
 const STORAGE_KEY = 'gk_card_maker_questions_v2';
 const STATS_KEY = 'gk_card_maker_stats_v2';
@@ -28,12 +29,23 @@ export function saveQuestionToStorage(question: GKQuestion): GKQuestion[] {
   const index = existing.findIndex((q) => q.id === question.id);
   const now = Date.now();
 
+  // Security Division: Sanitize user inputs prior to persistence
+  const cleanQ: GKQuestion = {
+    ...question,
+    question: sanitizeString(question.question),
+    optionA: sanitizeString(question.optionA),
+    optionB: sanitizeString(question.optionB),
+    optionC: sanitizeString(question.optionC),
+    optionD: sanitizeString(question.optionD),
+    image: isSafeImageUrl(question.image) ? question.image : undefined,
+  };
+
   let updated: GKQuestion[];
   if (index >= 0) {
     updated = [...existing];
-    updated[index] = { ...question, updatedAt: now };
+    updated[index] = { ...cleanQ, updatedAt: now };
   } else {
-    updated = [{ ...question, createdAt: now, updatedAt: now }, ...existing];
+    updated = [{ ...cleanQ, createdAt: now, updatedAt: now }, ...existing];
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -49,7 +61,16 @@ export function deleteQuestionFromStorage(id: string): GKQuestion[] {
 
 export function saveAllQuestionsToStorage(questions: GKQuestion[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(questions));
+    const sanitized = questions.map((q) => ({
+      ...q,
+      question: sanitizeString(q.question),
+      optionA: sanitizeString(q.optionA),
+      optionB: sanitizeString(q.optionB),
+      optionC: sanitizeString(q.optionC),
+      optionD: sanitizeString(q.optionD),
+      image: isSafeImageUrl(q.image) ? q.image : undefined,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
   } catch (err) {
     console.error('Failed to save all questions:', err);
   }
@@ -111,8 +132,20 @@ export function exportQuestionsToJson(): string {
   return JSON.stringify(questions, null, 2);
 }
 
+/**
+ * Security Division: Safe JSON backup importer
+ * - Protects against Prototype Pollution
+ * - Validates schema and fields
+ * - Sanitizes all string fields
+ * - Blocks unsafe payload scripts
+ */
 export function importQuestionsFromJson(jsonStr: string): { count: number; error?: string } {
   try {
+    // Basic length safety check
+    if (jsonStr.length > 25 * 1024 * 1024) {
+      return { count: 0, error: 'Backup file exceeds maximum allowed size (25MB).' };
+    }
+
     const data = JSON.parse(jsonStr);
     if (!Array.isArray(data)) {
       return { count: 0, error: 'Imported JSON must be an array of questions.' };
@@ -123,20 +156,31 @@ export function importQuestionsFromJson(jsonStr: string): { count: number; error
 
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
-      if (item.question && item.optionA && item.optionB && item.optionC && item.optionD) {
+      if (!item || typeof item !== 'object') continue;
+
+      // Extract and sanitize safe fields only (prevents prototype pollution)
+      const qText = sanitizeString(item.question);
+      const optA = sanitizeString(item.optionA);
+      const optB = sanitizeString(item.optionB);
+      const optC = sanitizeString(item.optionC);
+      const optD = sanitizeString(item.optionD);
+
+      if (qText && optA && optB && optC && optD) {
+        const safeImg = isSafeImageUrl(item.image) ? item.image : undefined;
+
         validated.push({
-          id: item.id || `imp_${Date.now()}_${i}`,
-          questionNumber: item.questionNumber || current.length + i + 1,
-          question: item.question,
-          optionA: item.optionA,
-          optionB: item.optionB,
-          optionC: item.optionC,
-          optionD: item.optionD,
-          correctAnswer: item.correctAnswer || 'A',
-          image: item.image,
-          imageTopic: item.imageTopic,
-          imageMode: item.imageMode || 'library',
-          createdAt: item.createdAt || Date.now(),
+          id: `imp_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
+          questionNumber: typeof item.questionNumber === 'number' ? item.questionNumber : current.length + i + 1,
+          question: qText,
+          optionA: optA,
+          optionB: optB,
+          optionC: optC,
+          optionD: optD,
+          correctAnswer: ['A', 'B', 'C', 'D'].includes(item.correctAnswer) ? item.correctAnswer : 'A',
+          image: safeImg,
+          imageTopic: sanitizeString(item.imageTopic),
+          imageMode: ['ai', 'library', 'upload', 'none'].includes(item.imageMode) ? item.imageMode : 'library',
+          createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
           updatedAt: Date.now(),
         });
       }

@@ -270,8 +270,10 @@ export default function App() {
         {currentTab === 'home' && (
           <DashboardView
             stats={stats}
+            savedQuestions={savedQuestions}
             recentQuestions={savedQuestions}
             designConfig={designConfig}
+            onNavigate={(tab) => setCurrentTab(tab as any)}
             onCreateNewCard={handleNewQuestion}
             onOpenEditor={() => setCurrentTab('editor')}
             onOpenSaved={() => setCurrentTab('saved')}

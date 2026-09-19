@@ -13,10 +13,6 @@ import {
 } from './services/storage';
 import { Navbar, AppTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
-import { VideoStudio } from './components/VideoStudio';
-import { VideoEditor } from './video-editor';
-import { VideoProject } from './video-editor/types';
-import { generateTimelineFromQuestions } from './video-editor/engine/GKVideoGenerator';
 import { CardPreview } from './components/CardPreview';
 import { QuestionForm } from './components/QuestionForm';
 import { ImageControls } from './components/ImageControls';
@@ -39,7 +35,6 @@ import {
   Download,
   Bookmark,
   Sparkles,
-  Film,
 } from 'lucide-react';
 
 export default function App() {
@@ -63,7 +58,6 @@ export default function App() {
     updatedAt: Date.now(),
   });
 
-  const [videoProject, setVideoProject] = useState<VideoProject | undefined>(undefined);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isAiImageModalOpen, setIsAiImageModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -116,14 +110,6 @@ export default function App() {
       }
       return prev;
     });
-
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      const hash = window.location.hash;
-      if (path === '/video-editor' || hash === '#video-editor') {
-        setCurrentTab('video');
-      }
-    }
   }, []);
 
   const handleNewQuestion = () => {
@@ -249,29 +235,6 @@ export default function App() {
     showToast(`Image set for all ${updatedList.length} saved cards!`, 'success');
   };
 
-  const handleOpenQuestionsInVideoEditor = (questions: GKQuestion[]) => {
-    if (!questions || questions.length === 0) return;
-    const generated = generateTimelineFromQuestions(questions, {
-      aspectRatio: '16:9',
-      stylePreset: 'reference',
-      readTime: 2.5,
-      optionIntervalTime: 0.75,
-      timerTime: 5.0,
-      revealTime: 2.5,
-      enableVoiceover: true,
-      voiceoverSpeed: 1.0,
-      enableSfx: true,
-    });
-    setVideoProject(generated);
-    setCurrentTab('video');
-    showToast(
-      questions.length === 1
-        ? `🎬 Opened Card #${questions[0].questionNumber || 1} in 16:9 Video Studio!`
-        : `🎬 Created 16:9 Video Episode with ${questions.length} questions!`,
-      'success'
-    );
-  };
-
   const filteredQuestions = savedQuestions.filter((q) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -287,23 +250,21 @@ export default function App() {
   });
 
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 ${currentTab === 'video' ? 'pb-0' : 'pb-20 md:pb-8'} relative`}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 pb-20 md:pb-8 relative">
       {/* Premium subtle background glow */}
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-indigo-100/40 to-transparent pointer-events-none -z-10" />
-      {/* Compact, Clean, Friendly Header (Hidden during Video Editor for full-screen workstation view) */}
-      {currentTab !== 'video' && (
-        <Navbar
-          currentTab={currentTab}
-          onChangeTab={setCurrentTab}
-          onNewQuestion={handleNewQuestion}
-          savedCount={savedQuestions.length}
-          onOpenAiQuestions={() => setIsAiModalOpen(true)}
-          onOpenAiImageStudio={() => setIsAiImageModalOpen(true)}
-        />
-      )}
+      {/* Compact, Clean, Friendly Header */}
+      <Navbar
+        currentTab={currentTab}
+        onChangeTab={setCurrentTab}
+        onNewQuestion={handleNewQuestion}
+        savedCount={savedQuestions.length}
+        onOpenAiQuestions={() => setIsAiModalOpen(true)}
+        onOpenAiImageStudio={() => setIsAiImageModalOpen(true)}
+      />
 
       {/* Main Content Area */}
-      <main className={`flex-1 w-full mx-auto ${currentTab === 'video' ? 'p-0 max-w-none' : 'max-w-7xl px-4 sm:px-6 pt-5 sm:pt-6'}`}>
+      <main className="flex-1 w-full mx-auto max-w-7xl px-4 sm:px-6 pt-5 sm:pt-6">
         {/* TAB: DASHBOARD (HOME) */}
         {currentTab === 'home' && (
           <DashboardView
@@ -339,7 +300,6 @@ export default function App() {
                   onDuplicate={() => handleDuplicateCurrent()}
                   onUpdateDesign={handleEditorLayoutUpdate}
                   onOpenPositionControls={() => setActiveEditorSection('layout')}
-                  onOpenInVideoEditor={(q) => handleOpenQuestionsInVideoEditor([q])}
                 />
               </div>
             </div>
@@ -475,22 +435,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                {savedQuestions.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenQuestionsInVideoEditor(savedQuestions)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer shrink-0"
-                    title="Convert all saved questions into a 16:9 Video Episode"
-                  >
-                    <Film className="w-3.5 h-3.5 text-violet-200" />
-                    <span className="hidden sm:inline">Export All to Video</span>
-                    <span className="sm:hidden">Video</span>
-                    <span>({savedQuestions.length})</span>
-                  </button>
-                )}
-
-                <div className="relative flex-1 sm:w-64">
+                <div className="relative w-full sm:w-64">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
@@ -501,7 +446,6 @@ export default function App() {
                   />
                 </div>
               </div>
-            </div>
 
             {/* Questions Grid */}
             {filteredQuestions.length > 0 ? (
@@ -514,7 +458,6 @@ export default function App() {
                     onEdit={handleEditSaved}
                     onDuplicate={handleDuplicateCurrent}
                     onDelete={handleDeleteSaved}
-                    onOpenInVideoEditor={(singleQ) => handleOpenQuestionsInVideoEditor([singleQ])}
                   />
                 ))}
               </div>
@@ -562,18 +505,6 @@ export default function App() {
                 setActiveEditorSection('question');
                 setCurrentTab('editor');
               }}
-              onOpenInVideoEditor={handleOpenQuestionsInVideoEditor}
-            />
-          </div>
-        )}
-
-        {/* TAB: VIDEO EDITOR */}
-        {currentTab === 'video' && (
-          <div className="fixed inset-0 z-50 w-full h-full bg-[#090b10]">
-            <VideoEditor
-              key={videoProject?.id || 'video_editor'}
-              initialProject={videoProject}
-              onBack={() => setCurrentTab('home')}
             />
           </div>
         )}

@@ -7,12 +7,11 @@ import {
   Bookmark,
   Sparkles,
   ArrowRight,
-  Film,
   Search,
   Wand2,
   Edit3,
   TrendingUp,
-  Video,
+  LayoutTemplate,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -20,7 +19,7 @@ interface DashboardViewProps {
   savedQuestions?: GKQuestion[];
   recentQuestions?: GKQuestion[];
   designConfig: CardDesignConfig;
-  onNavigate?: (tab: 'editor' | 'saved' | 'batch' | 'settings' | 'templates' | 'video') => void;
+  onNavigate?: (tab: 'editor' | 'saved' | 'batch' | 'settings' | 'templates') => void;
   onNewCard?: () => void;
   onCreateNewCard?: () => void;
   onEditCard?: (q: GKQuestion) => void;
@@ -66,43 +65,43 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="space-y-2 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>GK Card & Shorts Studio</span>
+            <span>GK Card Maker Studio</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Create Engaging Question Cards & Animated Shorts
+            Create Engaging Question Cards
           </h1>
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
-            Simple, user-friendly editor with multi-track timeline, circular countdown timer, and Hindi voiceover.
+            Simple, user-friendly editor for creating high resolution 16:9 GK question cards with Hindi typography, custom frames, and instant 1080p PNG export.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             type="button"
-            onClick={() => onNavigate?.('video')}
+            onClick={handleNewCard}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-all active:scale-95 cursor-pointer"
           >
-            <Video className="w-4 h-4" />
-            <span>Open Video Studio</span>
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>New Card</span>
           </button>
 
           <button
             type="button"
-            onClick={handleNewCard}
+            onClick={() => onNavigate?.('batch')}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs border border-slate-200 transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>New Card</span>
+            <Layers className="w-4 h-4" />
+            <span>Batch Generator</span>
           </button>
         </div>
       </div>
 
       {/* ─── Quick Stats Metrics (Clean White Cards) ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-medium text-slate-500">Total Cards</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">{stats.totalQuestions || allQuestions.length}</p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{stats.totalQuestions}</p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
             <Bookmark className="w-4 h-4" />
@@ -111,8 +110,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-slate-500">Saved in Library</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">{stats.savedQuestions || allQuestions.length}</p>
+            <p className="text-xs font-medium text-slate-500">Saved Cards</p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{stats.savedQuestions}</p>
+          </div>
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <Sparkles className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-500">Generated</p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{stats.generatedCards}</p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
             <Layers className="w-4 h-4" />
@@ -121,21 +130,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-slate-500">Generated Exports</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">{stats.generatedCards || 18}</p>
-          </div>
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-slate-500">Video Studio</p>
-            <p className="text-xl font-bold text-blue-600 mt-0.5">Shorts Ready</p>
+            <p className="text-xs font-medium text-slate-500">Export Quality</p>
+            <p className="text-xl font-bold text-blue-600 mt-0.5">1080p HD</p>
           </div>
           <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Film className="w-4 h-4" />
+            <TrendingUp className="w-4 h-4" />
           </div>
         </div>
       </div>
@@ -143,43 +142,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ─── Workspaces Hub ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
-          onClick={() => onNavigate?.('video')}
+          onClick={handleNewCard}
           className="p-5 rounded-2xl bg-white border-2 border-blue-200 hover:border-blue-400 hover:shadow-sm cursor-pointer flex flex-col justify-between group transition-all"
         >
           <div className="space-y-2.5">
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center">
-              <Video className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
-              Video Studio (Shorts/Reels)
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-700">New</span>
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Multi-track timeline with countdown timer, red dashed options focus, Hindi voiceover script, and 1-click 1080p video export.
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 mt-5 pt-3 border-t border-slate-100">
-            <span>Open Studio</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
-
-        <div
-          onClick={handleNewCard}
-          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm cursor-pointer flex flex-col justify-between group transition-all"
-        >
-          <div className="space-y-2.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors">
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
               Single Card Studio
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               Design individual high-resolution 16:9 cards with custom typography, layout nudge controls, and Devanagari styling.
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 group-hover:text-slate-900 mt-5 pt-3 border-t border-slate-100">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 mt-5 pt-3 border-t border-slate-100">
             <span>Open Studio</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
@@ -205,6 +182,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
+
+        <div
+          onClick={() => onNavigate?.('templates')}
+          className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm cursor-pointer flex flex-col justify-between group transition-all"
+        >
+          <div className="space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <LayoutTemplate className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-slate-800 transition-colors">
+              Templates & Themes
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Manage custom themes, PNG frame overlays, color palettes, and ABCD badge placements.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 group-hover:text-slate-900 mt-5 pt-3 border-t border-slate-100">
+            <span>View Templates</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
       </div>
 
       {/* ─── Question Cards List ─── */}
@@ -212,7 +210,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Saved Cards</h2>
-            <p className="text-xs text-slate-500">Click any card to edit or open in video timeline</p>
+            <p className="text-xs text-slate-500">Click any card to edit in Single Card Studio</p>
           </div>
 
           <div className="relative w-full sm:w-64">

@@ -12,7 +12,6 @@ import {
   MoreVertical,
   Sparkles,
   Check,
-  Film,
 } from 'lucide-react';
 
 interface SavedQuestionCardProps {
@@ -21,7 +20,6 @@ interface SavedQuestionCardProps {
   onEdit: (q: GKQuestion) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
-  onOpenInVideoEditor?: (q: GKQuestion) => void;
 }
 
 export const SavedQuestionCard: React.FC<SavedQuestionCardProps> = ({
@@ -30,7 +28,6 @@ export const SavedQuestionCard: React.FC<SavedQuestionCardProps> = ({
   onEdit,
   onDuplicate,
   onDelete,
-  onOpenInVideoEditor,
 }) => {
   const { showToast } = useToast();
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -167,20 +164,7 @@ export const SavedQuestionCard: React.FC<SavedQuestionCardProps> = ({
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 bottom-7 z-30 w-36 bg-white border border-slate-200 rounded-xl shadow-lg py-1 flex flex-col text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
-                {onOpenInVideoEditor && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMenu(false);
-                      onOpenInVideoEditor(question);
-                    }}
-                    className="px-3 py-1.5 text-left text-violet-700 hover:bg-violet-50 flex items-center gap-1.5 cursor-pointer font-semibold"
-                  >
-                    <Film className="w-3 h-3 text-violet-600" />
-                    <span>Video Studio</span>
-                  </button>
-                )}
+              <div className="absolute right-0 bottom-7 z-30 w-32 bg-white border border-slate-200 rounded-xl shadow-lg py-1 flex flex-col text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
                 <button
                   type="button"
                   onClick={() => {

@@ -7,10 +7,9 @@ import {
   Home,
   LayoutTemplate,
   Wand2,
-  Video,
 } from 'lucide-react';
 
-export type AppTab = 'home' | 'editor' | 'batch' | 'templates' | 'settings' | 'video';
+export type AppTab = 'home' | 'editor' | 'batch' | 'templates' | 'settings';
 
 interface NavbarProps {
   currentTab: AppTab;
@@ -26,13 +25,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewQuestion,
   onOpenAiQuestions,
 }) => {
-  const tabs = [
-    { id: 'video' as AppTab, label: 'Video Studio', icon: Video, badge: 'Shorts' },
-    { id: 'home' as AppTab, label: 'Dashboard', icon: Home },
-    { id: 'editor' as AppTab, label: 'Single Card', icon: Sparkles },
-    { id: 'batch' as AppTab, label: 'Batch Cards', icon: Layers },
-    { id: 'templates' as AppTab, label: 'Templates', icon: LayoutTemplate },
-    { id: 'settings' as AppTab, label: 'Settings', icon: SettingsIcon },
+  const tabs: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }>; badge?: string }[] = [
+    { id: 'home', label: 'Dashboard', icon: Home },
+    { id: 'editor', label: 'Single Card', icon: Sparkles },
+    { id: 'batch', label: 'Batch Cards', icon: Layers },
+    { id: 'templates', label: 'Templates', icon: LayoutTemplate },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
@@ -46,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
-              <Video className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
             </div>
 
             <span className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-1.5">

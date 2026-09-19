@@ -48,14 +48,22 @@ export function saveQuestionToStorage(question: GKQuestion): GKQuestion[] {
     updated = [{ ...cleanQ, createdAt: now, updatedAt: now }, ...existing];
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Failed to persist question to localStorage (quota or private mode):', err);
+  }
   return updated;
 }
 
 export function deleteQuestionFromStorage(id: string): GKQuestion[] {
   const existing = getStoredQuestions();
   const updated = existing.filter((q) => q.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Failed to persist deletion to localStorage:', err);
+  }
   return updated;
 }
 

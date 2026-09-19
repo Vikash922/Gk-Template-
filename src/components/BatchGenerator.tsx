@@ -4,7 +4,7 @@ import { CardDesignConfig } from '../types/design';
 import { CardCanvas } from './CardCanvas';
 import { CardLayoutControls } from './CardLayoutControls';
 import { generateCardsZip } from '../services/exportService';
-import { saveQuestionToStorage } from '../services/storage';
+import { saveQuestionToStorage, saveAllQuestionsToStorage, getStoredQuestions } from '../services/storage';
 import { extractTopicFromQuestion, generateRelatedImage } from '../services/imageGenerator';
 import { findCuratedAssetByQuery, CURATED_ASSETS } from '../constants/curatedImages';
 import { DEFAULT_TEMPLATE_DATA_URI } from '../constants/defaultTemplate';
@@ -618,9 +618,18 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
     setProgress({ current: 0, total: listToExport.length });
 
     try {
-      // Save all parsed questions into storage
-      listToExport.forEach((q) => saveQuestionToStorage(q));
-      if (onQuestionsAdded) onQuestionsAdded();
+      // Save all parsed questions into storage safely (non-blocking, won't fail ZIP export if localStorage quota exceeded)
+      try {
+        const existing = getStoredQuestions();
+        const existingIds = new Set(existing.map((q) => q.id));
+        const newToAdd = listToExport.filter((q) => !existingIds.has(q.id));
+        if (newToAdd.length > 0) {
+          saveAllQuestionsToStorage([...newToAdd, ...existing]);
+        }
+        if (onQuestionsAdded) onQuestionsAdded();
+      } catch (storageErr) {
+        console.warn('Non-blocking storage error:', storageErr);
+      }
 
       // Export all to ZIP
       await generateCardsZip(listToExport, designConfig, (current, total) => {
@@ -628,9 +637,9 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
       });
 
       setCompleted(true);
-    } catch (err) {
-      alert('Batch card generation failed. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Batch card generation error:', err);
+      alert(err?.message || 'Batch card generation failed. Please try again.');
     } finally {
       setIsGenerating(false);
     }

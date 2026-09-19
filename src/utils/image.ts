@@ -1,6 +1,10 @@
 const imageCache = new Map<string, HTMLImageElement>();
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
+  if (!src) {
+    return Promise.reject(new Error('Empty image source'));
+  }
+
   if (imageCache.has(src)) {
     const cached = imageCache.get(src)!;
     if (cached.complete && cached.naturalWidth > 0) {
@@ -10,14 +14,31 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
 
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    const isDataOrBlob = src.startsWith('data:') || src.startsWith('blob:');
+    if (!isDataOrBlob) {
+      img.crossOrigin = 'anonymous';
+    }
+
     img.onload = () => {
       imageCache.set(src, img);
       resolve(img);
     };
+
     img.onerror = (err) => {
+      // If anonymous CORS failed on an external URL, retry without crossOrigin
+      if (img.crossOrigin) {
+        const retryImg = new Image();
+        retryImg.onload = () => {
+          imageCache.set(src, retryImg);
+          resolve(retryImg);
+        };
+        retryImg.onerror = () => reject(err);
+        retryImg.src = src;
+        return;
+      }
       reject(err);
     };
+
     img.src = src;
   });
 }

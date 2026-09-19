@@ -14,6 +14,7 @@ import {
 import { Navbar, AppTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { VideoStudio } from './components/VideoStudio';
+import { VideoEditor } from './video-editor';
 import { CardPreview } from './components/CardPreview';
 import { QuestionForm } from './components/QuestionForm';
 import { ImageControls } from './components/ImageControls';
@@ -111,6 +112,14 @@ export default function App() {
       }
       return prev;
     });
+
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path === '/video-editor' || hash === '#video-editor') {
+        setCurrentTab('video');
+      }
+    }
   }, []);
 
   const handleNewQuestion = () => {
@@ -251,21 +260,23 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 pb-20 md:pb-8 relative">
+    <div className={`min-h-screen flex flex-col bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 text-slate-900 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 ${currentTab === 'video' ? 'pb-0' : 'pb-20 md:pb-8'} relative`}>
       {/* Premium subtle background glow */}
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-indigo-100/40 to-transparent pointer-events-none -z-10" />
-      {/* Compact, Clean, Friendly Header */}
-      <Navbar
-        currentTab={currentTab}
-        onChangeTab={setCurrentTab}
-        onNewQuestion={handleNewQuestion}
-        savedCount={savedQuestions.length}
-        onOpenAiQuestions={() => setIsAiModalOpen(true)}
-        onOpenAiImageStudio={() => setIsAiImageModalOpen(true)}
-      />
+      {/* Compact, Clean, Friendly Header (Hidden during Video Editor for full-screen workstation view) */}
+      {currentTab !== 'video' && (
+        <Navbar
+          currentTab={currentTab}
+          onChangeTab={setCurrentTab}
+          onNewQuestion={handleNewQuestion}
+          savedCount={savedQuestions.length}
+          onOpenAiQuestions={() => setIsAiModalOpen(true)}
+          onOpenAiImageStudio={() => setIsAiImageModalOpen(true)}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 sm:pt-6">
+      <main className={`flex-1 w-full mx-auto ${currentTab === 'video' ? 'p-0 max-w-none' : 'max-w-7xl px-4 sm:px-6 pt-5 sm:pt-6'}`}>
         {/* TAB: DASHBOARD (HOME) */}
         {currentTab === 'home' && (
           <DashboardView
@@ -510,10 +521,10 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB: VIDEO */}
+        {/* TAB: VIDEO EDITOR */}
         {currentTab === 'video' && (
-          <div className="max-w-6xl mx-auto py-2 sm:py-4">
-            <VideoStudio />
+          <div className="fixed inset-0 z-50 w-full h-full bg-[#090b10]">
+            <VideoEditor onBack={() => setCurrentTab('home')} />
           </div>
         )}
 

@@ -998,7 +998,7 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
               </div>
 
               {/* Rendered Live Canvas */}
-              <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-900">
+              <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-50">
                 <CardCanvas
                   question={currentCard}
                   designConfig={

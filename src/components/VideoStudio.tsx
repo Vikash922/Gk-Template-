@@ -387,23 +387,23 @@ export const VideoStudio: React.FC = () => {
       {/* ─── CapCut / VN Top Header Bar ─── */}
       <div className="h-12 bg-[#141419] border-b border-[#22222a] px-4 flex items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#1b1b22] border border-[#2b2b36] px-2.5 py-1 rounded-lg">
-            <Film className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 bg-[#18181f] border border-[#262630] px-2.5 py-1 rounded-lg">
+            <Film className="w-3.5 h-3.5 text-blue-400" />
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="bg-transparent text-xs font-bold text-white focus:outline-none w-36 sm:w-52"
+              className="bg-transparent text-xs font-semibold text-zinc-100 focus:outline-none w-36 sm:w-52"
             />
           </div>
 
           {/* Aspect Ratio Switcher */}
-          <div className="flex items-center gap-1 bg-[#1b1b22] border border-[#2b2b36] p-0.5 rounded-lg text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-[#18181f] border border-[#262630] p-0.5 rounded-lg text-xs font-medium">
             <button
               type="button"
               onClick={() => setAspectRatio('16:9')}
               className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
-                aspectRatio === '16:9' ? 'bg-cyan-500 text-black font-bold' : 'text-slate-400 hover:text-white'
+                aspectRatio === '16:9' ? 'bg-blue-600 text-white font-semibold' : 'text-zinc-400 hover:text-white'
               }`}
               title="16:9 YouTube Landscape"
             >
@@ -414,7 +414,7 @@ export const VideoStudio: React.FC = () => {
               type="button"
               onClick={() => setAspectRatio('9:16')}
               className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors ${
-                aspectRatio === '9:16' ? 'bg-cyan-500 text-black font-bold' : 'text-slate-400 hover:text-white'
+                aspectRatio === '9:16' ? 'bg-blue-600 text-white font-semibold' : 'text-zinc-400 hover:text-white'
               }`}
               title="9:16 Shorts / Reels Portrait"
             >
@@ -426,19 +426,19 @@ export const VideoStudio: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono font-bold text-slate-400 hidden md:inline">
-            Timeline: <strong className="text-cyan-400">{formatTimecode(totalDurationSec)}</strong> ({timeline.length} Cards)
+            Timeline: <strong className="text-blue-400">{formatTimecode(totalDurationSec)}</strong> ({timeline.length} Cards)
           </span>
 
           <button
             type="button"
             onClick={handleExportVideo}
             disabled={isRendering || timeline.length === 0}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer ${
               isRendering
-                ? 'bg-slate-700 text-slate-300 cursor-wait'
+                ? 'bg-zinc-700 text-zinc-300 cursor-wait'
                 : timeline.length === 0
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black shadow-cyan-500/20'
+                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-sm'
             }`}
           >
             {isRendering ? (
@@ -500,7 +500,7 @@ export const VideoStudio: React.FC = () => {
               type="button"
               onClick={() => setLeftNavTab('media')}
               className={`flex-1 py-1.5 text-center rounded transition-colors ${
-                leftNavTab === 'media' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+                leftNavTab === 'media' ? 'bg-[#22222c] text-blue-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               Media
@@ -509,7 +509,7 @@ export const VideoStudio: React.FC = () => {
               type="button"
               onClick={() => setLeftNavTab('voice')}
               className={`flex-1 py-1.5 text-center rounded transition-colors ${
-                leftNavTab === 'voice' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+                leftNavTab === 'voice' ? 'bg-[#22222c] text-blue-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               Voice
@@ -518,7 +518,7 @@ export const VideoStudio: React.FC = () => {
               type="button"
               onClick={() => setLeftNavTab('audio')}
               className={`flex-1 py-1.5 text-center rounded transition-colors ${
-                leftNavTab === 'audio' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+                leftNavTab === 'audio' ? 'bg-[#22222c] text-blue-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               SFX
@@ -527,7 +527,7 @@ export const VideoStudio: React.FC = () => {
               type="button"
               onClick={() => setLeftNavTab('overlay')}
               className={`flex-1 py-1.5 text-center rounded transition-colors ${
-                leftNavTab === 'overlay' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+                leftNavTab === 'overlay' ? 'bg-[#22222c] text-blue-400' : 'text-slate-400 hover:text-white'
               }`}
             >
               Brand
@@ -550,7 +550,7 @@ export const VideoStudio: React.FC = () => {
                       }));
                       setTimeline(prepared);
                     }}
-                    className="text-cyan-400 font-bold hover:underline"
+                    className="text-blue-400 font-bold hover:underline"
                   >
                     + Add All
                   </button>
@@ -575,7 +575,7 @@ export const VideoStudio: React.FC = () => {
                           };
                           setTimeline((prev) => [...prev, newClip]);
                         }}
-                        className="p-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0"
+                        className="p-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold text-[10px] shrink-0"
                       >
                         + Add
                       </button>
@@ -589,7 +589,7 @@ export const VideoStudio: React.FC = () => {
             {leftNavTab === 'voice' && (
               <div className="space-y-3">
                 <div className="p-3 bg-[#191920] border border-[#262634] rounded-xl space-y-2">
-                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                  <div className="flex items-center gap-1.5 text-blue-400 font-bold text-xs">
                     <Mic className="w-3.5 h-3.5" />
                     <span>AI Voiceover Engine</span>
                   </div>
@@ -600,7 +600,7 @@ export const VideoStudio: React.FC = () => {
                     type="button"
                     onClick={handleAutoGenerateAllVoiceovers}
                     disabled={isGeneratingAllVoice || timeline.length === 0}
-                    className="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-black rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>{isGeneratingAllVoice ? 'Generating...' : 'Auto-Generate All Voices'}</span>
@@ -658,7 +658,7 @@ export const VideoStudio: React.FC = () => {
           <div className="h-9 px-3 bg-[#111116] border-b border-[#1e1e26] flex items-center justify-between text-xs text-slate-400 shrink-0">
             <div className="flex items-center gap-2">
               <span className="font-bold text-white">Player Monitor</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#1e1e28] text-cyan-400 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#1e1e28] text-blue-400 font-bold">
                 Clip {timeline.length > 0 ? `${activeClipIndex + 1}/${timeline.length}` : '0/0'}
               </span>
             </div>
@@ -743,7 +743,7 @@ export const VideoStudio: React.FC = () => {
 
               {timeline.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0d0d12] text-slate-500 text-xs">
-                  <Film className="w-8 h-8 opacity-40 text-cyan-400" />
+                  <Film className="w-8 h-8 opacity-40 text-blue-400" />
                   <span>Timeline is empty. Click "+ Add Card" below to start.</span>
                 </div>
               )}
@@ -780,10 +780,10 @@ export const VideoStudio: React.FC = () => {
                   if (isPlaying) stopPlayback();
                   else playSequenceFrom(activeClipIndex);
                 }}
-                className="w-8 h-8 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-xs active:scale-90 transition-transform cursor-pointer"
                 title={isPlaying ? 'Pause' : 'Play Preview'}
               >
-                {isPlaying ? <Pause className="w-4 h-4 fill-black" /> : <Play className="w-4 h-4 fill-black ml-0.5" />}
+                {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
               </button>
 
               <button
@@ -798,7 +798,7 @@ export const VideoStudio: React.FC = () => {
             </div>
 
             <div className="font-mono text-xs font-bold text-slate-300">
-              <span className="text-cyan-400">
+              <span className="text-blue-400">
                 {formatTimecode(Math.round(activeClipIndex * perClipSec))}
               </span>
               <span className="text-slate-600"> / </span>
@@ -811,7 +811,7 @@ export const VideoStudio: React.FC = () => {
         <div className="w-full lg:w-96 bg-[#131317] flex flex-col min-h-0 shrink-0 border-l border-[#202028]">
           <div className="h-10 bg-[#17171d] border-b border-[#23232e] px-4 flex items-center justify-between text-xs font-bold shrink-0">
             <span className="text-white flex items-center gap-1.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
               {selectedTrackType === 'video' && 'Card Video Clip'}
               {selectedTrackType === 'voiceover' && 'Voiceover Audio Clip'}
               {selectedTrackType === 'timer' && 'Countdown Timer Clip'}
@@ -832,7 +832,7 @@ export const VideoStudio: React.FC = () => {
                         rows={3}
                         value={currentClip.question}
                         onChange={(e) => updateCurrentClipField('question', e.target.value)}
-                        className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:border-cyan-500 focus:outline-none"
+                        className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:border-blue-500 focus:outline-none"
                       />
                     </div>
 
@@ -860,7 +860,7 @@ export const VideoStudio: React.FC = () => {
                               value={(currentClip[fieldName] as string) || ''}
                               onChange={(e) => updateCurrentClipField(fieldName, e.target.value)}
                               className={`flex-1 p-2 rounded-lg bg-[#1a1a22] border text-xs text-white focus:outline-none ${
-                                isCorrect ? 'border-green-500/60' : 'border-[#2b2b38] focus:border-cyan-500'
+                                isCorrect ? 'border-green-500/60' : 'border-[#2b2b38] focus:border-blue-500'
                               }`}
                             />
                           </div>
@@ -881,7 +881,7 @@ export const VideoStudio: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="flex-1 py-2 px-3 bg-[#1e1e28] hover:bg-[#252532] border border-[#2d2d3c] text-cyan-400 font-bold rounded-lg text-center transition-colors"
+                          className="flex-1 py-2 px-3 bg-[#1e1e28] hover:bg-[#252532] border border-[#2d2d3c] text-blue-400 font-bold rounded-lg text-center transition-colors"
                         >
                           Choose PNG File
                         </button>
@@ -907,7 +907,7 @@ export const VideoStudio: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleGenerateVoiceForCurrent}
-                        className="text-[10px] text-cyan-400 hover:underline"
+                        className="text-[10px] text-blue-400 hover:underline"
                       >
                         Reset to Default
                       </button>
@@ -918,13 +918,13 @@ export const VideoStudio: React.FC = () => {
                       value={currentClip.voiceoverScript || ''}
                       onChange={(e) => updateCurrentClipField('voiceoverScript', e.target.value)}
                       placeholder="Enter voice narration script..."
-                      className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:border-cyan-500 focus:outline-none leading-relaxed"
+                      className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:border-blue-500 focus:outline-none leading-relaxed"
                     />
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-bold text-slate-300">Voice Speed</span>
-                        <span className="font-mono text-cyan-400 font-bold">
+                        <span className="font-mono text-blue-400 font-bold">
                           {(currentClip.voiceoverSpeed || 1.0).toFixed(1)}x
                         </span>
                       </div>
@@ -935,7 +935,7 @@ export const VideoStudio: React.FC = () => {
                         step="0.1"
                         value={currentClip.voiceoverSpeed || 1.0}
                         onChange={(e) => updateCurrentClipField('voiceoverSpeed', parseFloat(e.target.value))}
-                        className="w-full accent-cyan-400"
+                        className="w-full accent-blue-500"
                       />
                     </div>
 
@@ -1030,14 +1030,14 @@ export const VideoStudio: React.FC = () => {
         <div className="h-9 px-4 bg-[#15151b] border-b border-[#202026] flex items-center justify-between text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-2">
             <span className="font-bold text-white flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <Layers className="w-3.5 h-3.5 text-blue-400" />
               Multi-Track Timeline
             </span>
 
             <button
               type="button"
               onClick={handleAddNewClip}
-              className="px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               <span>Add Card</span>
@@ -1139,8 +1139,8 @@ export const VideoStudio: React.FC = () => {
 
           {/* TRACK 2: Video Track (Cards) */}
           <div className="flex items-center gap-2 min-w-max">
-            <div className="w-20 text-[10px] font-bold text-cyan-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <Film className="w-3 h-3 text-cyan-400" />
+            <div className="w-20 text-[10px] font-bold text-blue-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Film className="w-3 h-3 text-blue-400" />
               <span>Video</span>
             </div>
 
@@ -1152,12 +1152,12 @@ export const VideoStudio: React.FC = () => {
                   onClick={() => selectClipAndTrack(idx, 'video')}
                   className={`relative w-48 h-14 rounded-lg p-1.5 flex flex-col justify-between cursor-pointer transition-all shrink-0 ${
                     isClipActive
-                      ? 'bg-gradient-to-r from-[#182635] to-[#121c27] border-2 border-cyan-400 shadow-md shadow-cyan-500/20'
+                      ? 'bg-[#1a2130] border-2 border-blue-500 shadow-sm'
                       : 'bg-[#181820] border border-[#262634] hover:bg-[#20202c]'
                   }`}
                 >
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-bold text-cyan-300 flex items-center gap-1">
+                    <span className="font-bold text-blue-300 flex items-center gap-1">
                       <span>Q{idx + 1}</span>
                       <span className="text-slate-400 font-normal truncate max-w-[90px]">{q.question}</span>
                     </span>
@@ -1168,7 +1168,7 @@ export const VideoStudio: React.FC = () => {
 
                   <div className="flex items-center justify-between text-[9px] text-slate-400">
                     <span>Ans: <strong className="text-green-400">{q.correctAnswer || 'A'}</strong></span>
-                    {isClipActive && <span className="text-cyan-400 font-bold">● Active</span>}
+                    {isClipActive && <span className="text-blue-400 font-bold">● Active</span>}
                   </div>
                 </div>
               );

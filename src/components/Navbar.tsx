@@ -4,7 +4,6 @@ import {
   Plus,
   Layers,
   Settings as SettingsIcon,
-  Film,
   Home,
   LayoutTemplate,
   Wand2,
@@ -30,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAiImageStudio,
 }) => {
   const tabs = [
-    { id: 'video' as AppTab, label: 'Video Studio', icon: Video, highlight: true },
+    { id: 'video' as AppTab, label: 'Video Studio', icon: Video, badge: 'Shorts' },
     { id: 'home' as AppTab, label: 'Dashboard', icon: Home },
     { id: 'editor' as AppTab, label: 'Single Card', icon: Sparkles },
     { id: 'batch' as AppTab, label: 'Batch Cards', icon: Layers },
@@ -40,28 +39,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      {/* ─── CapCut / VN Style Top Navigation Bar (High Performance, 0 Lag) ─── */}
-      <header className="sticky top-0 z-40 bg-[#121216] border-b border-[#22222a]">
+      {/* ─── Minimalist Premium Studio Topbar (Linear / Vercel Aesthetic) ─── */}
+      <header className="sticky top-0 z-40 bg-[#0e0e11] border-b border-[#222226]">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <div
             onClick={() => onChangeTab('home')}
             className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
-              <Video className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white group-hover:border-zinc-500 transition-colors">
+              <Video className="w-3.5 h-3.5 text-blue-400" />
             </div>
 
-            <span className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+            <span className="text-sm font-bold text-zinc-100 tracking-tight flex items-center gap-1.5">
               GK Studio
-              <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                PRO
+              <span className="text-[10px] font-semibold text-zinc-500 border border-zinc-800 px-1.5 py-0.2 rounded">
+                Pro
               </span>
             </span>
           </div>
 
-          {/* Center Tabs (CapCut / VN Segmented Bar) */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#181820] border border-[#262632]">
+          {/* Minimal Segmented Tabs */}
+          <nav className="hidden md:flex items-center gap-0.5 p-1 rounded-xl bg-[#141418] border border-[#222228]">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = currentTab === tab.id;
@@ -70,33 +69,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={tab.id}
                   type="button"
                   onClick={() => onChangeTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? tab.highlight
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm'
-                        : 'bg-[#2a2a38] text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-[#20202a]'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-zinc-400'}`} />
                   <span>{tab.label}</span>
-                  {tab.highlight && !isActive && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  {tab.badge && (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300">
+                      {tab.badge}
+                    </span>
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Action Buttons */}
+          {/* Right Action CTAs */}
           <div className="flex items-center gap-2">
             {onOpenAiQuestions && (
               <button
                 type="button"
                 onClick={onOpenAiQuestions}
-                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#242432] border border-[#2d2d3e] text-purple-400 text-xs font-bold transition-colors cursor-pointer"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 text-xs font-medium transition-colors cursor-pointer"
               >
-                <Wand2 className="w-3.5 h-3.5" />
+                <Wand2 className="w-3.5 h-3.5 text-purple-400" />
                 <span>AI Prompt</span>
               </button>
             )}
@@ -104,18 +103,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onNewQuestion}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold shadow-md shadow-cyan-500/20 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>New Card</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* ─── Mobile Bottom Navigation Dock ─── */}
+      {/* ─── Mobile Bottom Navigation Dock (Minimalist & Clean) ─── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#121216] border-t border-[#22222a] px-1 py-1 flex items-center justify-around select-none"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0e0e11] border-t border-[#222226] px-1 py-1 flex items-center justify-around select-none"
         aria-label="Mobile Navigation"
       >
         {tabs.slice(0, 5).map((tab) => {
@@ -127,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={() => onChangeTab(tab.id)}
               className={`flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 rounded-lg transition-colors ${
-                isActive ? 'text-cyan-400 font-bold bg-[#1e1e28]' : 'text-slate-400'
+                isActive ? 'text-blue-400 font-semibold bg-zinc-800/60' : 'text-zinc-400'
               }`}
             >
               <Icon className="w-4 h-4" />

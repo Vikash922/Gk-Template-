@@ -45,7 +45,14 @@ export const Timeline: React.FC = () => {
 
   const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const headersScrollRef = useRef<HTMLDivElement>(null);
   const isScrubbingRulerRef = useRef<boolean>(false);
+
+  const handleTimelineScroll = () => {
+    if (scrollContainerRef.current && headersScrollRef.current) {
+      headersScrollRef.current.scrollTop = scrollContainerRef.current.scrollTop;
+    }
+  };
 
   // Clip drag/trim refs
   const clipDragRef = useRef<{
@@ -290,14 +297,14 @@ export const Timeline: React.FC = () => {
       {/* ── Main Multi-Track Body ── */}
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
         {/* Left Track Headers Panel */}
-        <div className="w-32 sm:w-44 bg-[#0e1017] border-r border-[#1f2433] flex flex-col shrink-0 z-10 select-none">
+        <div className="w-28 sm:w-44 bg-[#0e1017] border-r border-[#1f2433] flex flex-col shrink-0 z-10 select-none">
           {/* Header spacer (matches ruler height) */}
           <div className="h-6 border-b border-[#1f2433] bg-[#12151f] flex items-center px-2 text-[10px] font-bold text-slate-400">
             Tracks
           </div>
 
           {/* Track Labels & Controls */}
-          <div className="flex-1 overflow-y-hidden flex flex-col">
+          <div ref={headersScrollRef} className="flex-1 overflow-y-hidden flex flex-col">
             {project.tracks.map((track) => (
               <div
                 key={track.id}
@@ -307,7 +314,7 @@ export const Timeline: React.FC = () => {
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   {getTrackIcon(track.type)}
-                  <span className="text-[11px] font-bold text-slate-300 truncate">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-300 truncate">
                     {track.name}
                   </span>
                 </div>
@@ -351,6 +358,7 @@ export const Timeline: React.FC = () => {
         {/* Right Scrollable Timeline Lanes */}
         <div
           ref={scrollContainerRef}
+          onScroll={handleTimelineScroll}
           className="flex-1 overflow-x-auto overflow-y-auto relative bg-[#090b10] no-scrollbar"
         >
           <div style={{ width: totalWidth }} className="relative h-full flex flex-col">

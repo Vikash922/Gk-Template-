@@ -78,6 +78,15 @@ export const EditorProvider: React.FC<{
   // Autosave Timer
   const autosaveTimerRef = useRef<any>(null);
 
+  // Sync initialProject when updated
+  useEffect(() => {
+    if (initialProject) {
+      setProjectState(initialProject);
+      setCurrentTimeState(0);
+      setSelection({ clipId: null, trackId: null, keyframeId: null });
+    }
+  }, [initialProject]);
+
   // Playhead requestAnimationFrame loop
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());

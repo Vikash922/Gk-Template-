@@ -35,7 +35,8 @@ export const GKVideoPanel: React.FC<GKVideoPanelProps> = ({ isOpen, onClose }) =
   // Settings
   const [settings, setSettings] = useState<GKGeneratorSettings>({
     ...DEFAULT_GK_SETTINGS,
-    aspectRatio: project.aspectRatio === '16:9' ? '16:9' : '9:16',
+    aspectRatio: project.aspectRatio === '9:16' ? '9:16' : '16:9',
+    stylePreset: 'reference',
   });
 
   // Custom question form
@@ -58,8 +59,12 @@ export const GKVideoPanel: React.FC<GKVideoPanelProps> = ({ isOpen, onClose }) =
       setSavedLibrary(stored);
       // Select all by default if questions exist
       setSelectedQuestionIds(stored.map((q) => q.id));
+      setSettings((prev) => ({
+        ...prev,
+        aspectRatio: project.aspectRatio === '9:16' ? '9:16' : '16:9',
+      }));
     }
-  }, [isOpen]);
+  }, [isOpen, project.aspectRatio]);
 
   if (!isOpen) return null;
 
@@ -256,7 +261,76 @@ export const GKVideoPanel: React.FC<GKVideoPanelProps> = ({ isOpen, onClose }) =
 
           {/* ── Generator Timing & Audio Settings ── */}
           <div className="p-3.5 rounded-xl bg-[#181c28] border border-[#252c3e] space-y-3">
-            <span className="font-bold text-slate-200 text-xs block">Timing & Audio Configuration</span>
+            <span className="font-bold text-slate-200 text-xs block">Format & Style Configuration</span>
+
+            {/* Aspect Ratio & Style Presets */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2 border-b border-[#252c3e]">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                  Video Aspect Ratio
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, aspectRatio: '16:9' })}
+                    className={`p-2 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                      settings.aspectRatio === '16:9'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
+                        : 'bg-[#121520] border-[#283146] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>16:9 Landscape</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, aspectRatio: '9:16' })}
+                    className={`p-2 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                      settings.aspectRatio === '9:16'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
+                        : 'bg-[#121520] border-[#283146] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>9:16 Shorts</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                  Card Style Template
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, stylePreset: 'reference' })}
+                    className={`p-2 rounded-xl border text-center font-bold text-xs cursor-pointer ${
+                      settings.stylePreset !== 'darkStudio'
+                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold'
+                        : 'bg-[#121520] border-[#283146] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Reference GK (White)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, stylePreset: 'darkStudio' })}
+                    className={`p-2 rounded-xl border text-center font-bold text-xs cursor-pointer ${
+                      settings.stylePreset === 'darkStudio'
+                        ? 'bg-blue-600/30 border-blue-500 text-blue-300 font-bold'
+                        : 'bg-[#121520] border-[#283146] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Dark Studio
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <span className="font-bold text-slate-200 text-xs block">Timing & Audio Pace</span>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>

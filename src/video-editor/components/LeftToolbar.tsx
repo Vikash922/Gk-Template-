@@ -239,7 +239,7 @@ export const LeftToolbar: React.FC = () => {
 
       {/* ── Sub-Drawer Panels ── */}
       {isExpanded && (
-        <div className="w-64 sm:w-72 bg-[#12151f] flex flex-col h-full border-r border-[#222634] overflow-y-auto p-3 text-xs select-none">
+        <div className="flex-1 md:w-64 lg:w-72 bg-[#12151f] flex flex-col h-full border-r border-[#222634] overflow-y-auto p-3 text-xs select-none">
           {/* Header */}
           <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#23283a]">
             <span className="font-bold text-white uppercase tracking-wider text-[11px]">
@@ -292,7 +292,7 @@ export const LeftToolbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() =>
-                  createAndAddClip('text', 'track_text_opts', 'Option A Box', 5, {
+                  createAndAddClip('text', 'track_opt_a', 'Option A Box', 5, {
                     text: {
                       content: '(A) नई दिल्ली',
                       fontFamily: 'Noto Sans Devanagari',
@@ -738,7 +738,7 @@ export const LeftToolbar: React.FC = () => {
               <button
                 type="button"
                 onClick={() =>
-                  createAndAddClip('text', 'track_text_opts', 'Correct Checkmark', 2.5, {
+                  createAndAddClip('text', 'track_timer', 'Correct Checkmark', 2.5, {
                     text: {
                       content: '✓ CORRECT ANSWER',
                       fontFamily: 'Noto Sans Devanagari',

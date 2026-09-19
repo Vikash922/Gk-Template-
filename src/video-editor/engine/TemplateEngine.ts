@@ -2,6 +2,54 @@ import { VideoProject, VideoTemplate, Clip } from '../types';
 
 export const BUILTIN_TEMPLATES: VideoTemplate[] = [
   {
+    id: 'tmpl_reference_16_9',
+    name: 'Reference 16:9 YouTube GK (Lime & Yellow)',
+    description: 'Exact batch card layout: Lime-yellow question banner (#c6ec02), bright yellow options (#fff000) with red border (#e11d48), green card frame (#15803d), and 5s split circular timer.',
+    aspectRatio: '16:9',
+    backgroundColor: '#ffffff',
+    questionStyle: {
+      color: '#000000',
+      fontSize: 48,
+      fontWeight: '800',
+      backgroundColor: '#c6ec02',
+      strokeColor: '#15803d',
+      strokeWidth: 3,
+      backgroundRadius: 18,
+      inAnimation: 'zoom',
+    },
+    optionStyle: {
+      color: '#000000',
+      fontSize: 36,
+      fontWeight: '700',
+      backgroundColor: '#fff000',
+      strokeColor: '#e11d48',
+      strokeWidth: 2.5,
+      backgroundRadius: 14,
+      inAnimation: 'pop',
+    },
+    correctOptionStyle: {
+      color: '#ffffff',
+      backgroundColor: '#15803d',
+      strokeColor: '#15803d',
+    },
+    timerStyle: {
+      type: 'circle',
+      duration: 5,
+      leftArcColor: '#2563eb',
+      rightArcColor: '#dc2626',
+      numberColor: '#b45309',
+    },
+    timing: {
+      questionReadTime: 2.5,
+      optionIntervalTime: 0.75,
+      timerCountdownTime: 5.0,
+      answerRevealTime: 2.5,
+    },
+    enableTts: true,
+    ttsRate: 1.0,
+    enableSfx: true,
+  },
+  {
     id: 'tmpl_viral_shorts',
     name: 'Viral Shorts (9:16 High Contrast)',
     description: 'Vibrant yellow/cyan gradients, pop animations, and bold outlined text optimized for YouTube Shorts and Instagram Reels.',
@@ -192,6 +240,17 @@ export function applyTemplateToProject(
 ): VideoProject {
   const updated = JSON.parse(JSON.stringify(project)) as VideoProject;
   updated.backgroundColor = template.backgroundColor;
+
+  if (template.aspectRatio && template.aspectRatio !== updated.aspectRatio) {
+    updated.aspectRatio = template.aspectRatio;
+    if (template.aspectRatio === '16:9') {
+      updated.width = 1920;
+      updated.height = 1080;
+    } else if (template.aspectRatio === '9:16') {
+      updated.width = 1080;
+      updated.height = 1920;
+    }
+  }
 
   for (const track of updated.tracks) {
     for (const clip of track.clips) {

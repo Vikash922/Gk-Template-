@@ -180,8 +180,8 @@ export class ExportEngine {
         onProgress(pct, `Rendering Frame ${currentFrame}/${totalFrames} (${pct}%)`, estSec);
 
         if (currentFrame <= totalFrames) {
-          // Keep loop going smoothly
-          setTimeout(renderNextBatch, 1000 / (fps * 2));
+          // Yield to browser event loop immediately (0ms) so UI stays responsive and export runs at hardware speed
+          setTimeout(renderNextBatch, 0);
         } else {
           // Finished rendering
           setTimeout(() => {
@@ -190,7 +190,7 @@ export class ExportEngine {
             } catch (err) {
               reject(err);
             }
-          }, 300);
+          }, 150);
         }
       };
 

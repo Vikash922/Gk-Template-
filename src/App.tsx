@@ -15,6 +15,8 @@ import { Navbar, AppTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { VideoStudio } from './components/VideoStudio';
 import { VideoEditor } from './video-editor';
+import { VideoProject } from './video-editor/types';
+import { generateTimelineFromQuestions } from './video-editor/engine/GKVideoGenerator';
 import { CardPreview } from './components/CardPreview';
 import { QuestionForm } from './components/QuestionForm';
 import { ImageControls } from './components/ImageControls';
@@ -60,6 +62,7 @@ export default function App() {
     updatedAt: Date.now(),
   });
 
+  const [videoProject, setVideoProject] = useState<VideoProject | undefined>(undefined);
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isAiImageModalOpen, setIsAiImageModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -517,6 +520,22 @@ export default function App() {
                 setActiveEditorSection('question');
                 setCurrentTab('editor');
               }}
+              onOpenInVideoEditor={(batchQuestions) => {
+                const generated = generateTimelineFromQuestions(batchQuestions, {
+                  aspectRatio: '16:9',
+                  stylePreset: 'reference',
+                  readTime: 2.5,
+                  optionIntervalTime: 0.75,
+                  timerTime: 5.0,
+                  revealTime: 2.5,
+                  enableVoiceover: true,
+                  voiceoverSpeed: 1.0,
+                  enableSfx: true,
+                });
+                setVideoProject(generated);
+                setCurrentTab('video');
+                showToast(`🎬 Created 16:9 Video Episode with ${batchQuestions.length} questions!`, 'success');
+              }}
             />
           </div>
         )}
@@ -524,7 +543,11 @@ export default function App() {
         {/* TAB: VIDEO EDITOR */}
         {currentTab === 'video' && (
           <div className="fixed inset-0 z-50 w-full h-full bg-[#090b10]">
-            <VideoEditor onBack={() => setCurrentTab('home')} />
+            <VideoEditor
+              key={videoProject?.id || 'video_editor'}
+              initialProject={videoProject}
+              onBack={() => setCurrentTab('home')}
+            />
           </div>
         )}
 

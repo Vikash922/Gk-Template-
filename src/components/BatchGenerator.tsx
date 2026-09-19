@@ -39,6 +39,7 @@ interface BatchGeneratorProps {
   onUpdateDesignConfig?: (updated: CardDesignConfig) => void;
   onQuestionsAdded?: () => void;
   onEditInSingleEditor?: (question: GKQuestion) => void;
+  onOpenInVideoEditor?: (questions: GKQuestion[]) => void;
 }
 
 const DEFAULT_BATCH_TEXT = `1. Which country is known as the Land of the Rising Sun?
@@ -185,6 +186,7 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
   onUpdateDesignConfig,
   onQuestionsAdded,
   onEditInSingleEditor,
+  onOpenInVideoEditor,
 }) => {
   const [batchText, setBatchText] = useState<string>(DEFAULT_BATCH_TEXT);
   const [questions, setQuestions] = useState<GKQuestion[]>(() => parseQuestionsText(DEFAULT_BATCH_TEXT));
@@ -197,6 +199,26 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
   const singleCardInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenInVideoEditor = () => {
+    let listToExport = questions;
+    if (listToExport.length === 0) {
+      listToExport = parseQuestionsText(batchText);
+      setQuestions(listToExport);
+    }
+
+    if (listToExport.length === 0) {
+      alert('Please enter or parse at least one question first.');
+      return;
+    }
+
+    listToExport.forEach((q) => saveQuestionToStorage(q));
+    if (onQuestionsAdded) onQuestionsAdded();
+
+    if (onOpenInVideoEditor) {
+      onOpenInVideoEditor(listToExport);
+    }
+  };
   const activeUploadCardIdx = useRef<number>(0);
 
   const [bulkUploadNote, setBulkUploadNote] = useState<string>('');
@@ -720,6 +742,16 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{isAiParsing ? 'Gemini Parsing...' : 'Gemini AI Smart Parse & Auto-Add'}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={handleOpenInVideoEditor}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer active:scale-95"
+                title="Directly open questions inside 16:9 Multi-Track Video Studio"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                <span>🎬 Open as 16:9 Video</span>
+              </button>
             </div>
 
             <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
@@ -1093,6 +1125,15 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
                       <span>Download All ({questions.length}) Cards as ZIP</span>
                     </>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenInVideoEditor}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <Sparkles className="w-5 h-5 text-yellow-300" />
+                  <span>🎬 Create 16:9 Video Episode ({questions.length} Questions)</span>
                 </button>
 
                 {/* Progress bar */}

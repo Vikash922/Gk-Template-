@@ -86,6 +86,15 @@ export function playAnswerDingSound(audioCtx?: AudioContext, dest?: AudioNode) {
 }
 
 /**
+ * Generates natural Hindi voiceover script for a question card
+ */
+export function generateVoiceoverScript(q: GKQuestion): string {
+  const correctLetter = q.correctAnswer || 'A';
+  const correctText = (q as any)[`option${correctLetter}`] || '';
+  return `सवाल नंबर ${q.questionNumber || 1}. ${q.question}. विकल्प ए. ${q.optionA}. विकल्प बी. ${q.optionB}. विकल्प सी. ${q.optionC}. विकल्प डी. ${q.optionD}. सही जवाब है विकल्प ${correctLetter}. ${correctText}`;
+}
+
+/**
  * Text to speech trigger using Web Speech API (runs offline on Chrome/Android)
  */
 export function speakHindiText(text: string, rate: number = 1.0): Promise<void> {
@@ -369,7 +378,8 @@ export async function generateExactQuizVideo(
         // ── 2. Read Question (Base card) ──
         onProgress(`Question ${i + 1}/${totalQ} — Reading Question`, basePct + 2);
         if (studioConfig.enableVoiceover) {
-          speakHindiText(`सवाल नंबर ${q.questionNumber || i + 1}. ${q.question}`, studioConfig.voiceRate);
+          const speechText = q.voiceoverScript || `सवाल नंबर ${q.questionNumber || i + 1}. ${q.question}`;
+          speakHindiText(speechText, q.voiceoverSpeed || studioConfig.voiceRate);
         }
 
         const readFrames = Math.round(qCfg.readTime * fps);

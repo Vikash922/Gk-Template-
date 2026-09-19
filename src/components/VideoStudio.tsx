@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GKQuestion } from '../types/question';
 import { CardDesignConfig } from '../types/design';
-import { getStoredQuestions } from '../services/storage';
+import { getStoredQuestions, saveAllQuestionsToStorage } from '../services/storage';
 import {
   generateExactQuizVideo,
   DEFAULT_STUDIO_CONFIG,
@@ -12,6 +12,7 @@ import {
   playClockTickSound,
   playAnswerDingSound,
   speakHindiText,
+  generateVoiceoverScript,
 } from '../utils/videoRenderer';
 import { REFERENCE_DESIGN } from '../constants/referenceDesign';
 import { renderCardToCanvas } from '../utils/canvasRenderer';
@@ -47,49 +48,70 @@ import {
   Monitor,
   MoveLeft,
   MoveRight,
+  Split,
+  FolderOpen,
+  Volume1,
+  FileText,
+  Radio,
+  SlidersHorizontal,
 } from 'lucide-react';
 
+type SelectedTrackType = 'video' | 'voiceover' | 'timer' | 'sfx';
+
 export const VideoStudio: React.FC = () => {
-  // ─── Project Data ───
+  // ─── Data State ───
   const [library, setLibrary] = useState<GKQuestion[]>([]);
   const [timeline, setTimeline] = useState<GKQuestion[]>([]);
   const [designConfig] = useState<CardDesignConfig>(REFERENCE_DESIGN);
   const [projectName, setProjectName] = useState('GK_Quiz_Episode_1');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
 
-  // ─── Studio Configuration (CapCut / VN Options) ───
-  const [studioConfig, setStudioConfig] = useState<VideoStudioConfig>({ ...DEFAULT_STUDIO_CONFIG });
-  const [activeInspectorTab, setActiveInspectorTab] = useState<'content' | 'media' | 'audio' | 'settings'>('content');
-
-  // ─── Playhead & Active Clip State ───
+  // ─── Selection on the Timeline (CapCut Track Inspection) ───
   const [activeClipIndex, setActiveClipIndex] = useState<number>(0);
+  const [selectedTrackType, setSelectedTrackType] = useState<SelectedTrackType>('video');
+
+  // ─── Studio Config & Properties ───
+  const [studioConfig, setStudioConfig] = useState<VideoStudioConfig>({ ...DEFAULT_STUDIO_CONFIG });
+  const [leftNavTab, setLeftNavTab] = useState<'media' | 'voice' | 'audio' | 'overlay'>('media');
+
+  // ─── Playback & Transport State ───
   const [playPhase, setPlayPhase] = useState<'normal' | 'optA' | 'optB' | 'optC' | 'optD' | 'timer' | 'timeout' | 'answer'>('normal');
   const [timerDigit, setTimerDigit] = useState<number>(5);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const playheadTimerRef = useRef<any>(null);
 
-  // ─── Render Export Progress ───
+  // ─── Video Export State ───
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [renderProgress, setRenderProgress] = useState<string>('');
   const [renderPercent, setRenderPercent] = useState<number>(0);
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
 
-  // ─── Canvas Refs ───
+  // ─── Voice Generation Feedback ───
+  const [isGeneratingAllVoice, setIsGeneratingAllVoice] = useState<boolean>(false);
+  const [isPlayingVoicePreview, setIsPlayingVoicePreview] = useState<boolean>(false);
+
+  // ─── Canvas & File Input Refs ───
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── Initial Load ───
+  // ─── Initial Load & Auto-populate Voiceover ───
   useEffect(() => {
     const saved = getStoredQuestions();
     setLibrary(saved);
     if (saved.length > 0 && timeline.length === 0) {
-      setTimeline(saved);
+      // Initialize timeline cards with default voiceover scripts
+      const prepared = saved.map((q) => ({
+        ...q,
+        voiceoverScript: q.voiceoverScript || generateVoiceoverScript(q),
+        voiceoverSpeed: q.voiceoverSpeed || 1.0,
+      }));
+      setTimeline(prepared);
     }
   }, []);
 
   const currentClip = timeline[activeClipIndex] || timeline[0];
 
-  // ─── High-Performance Canvas Render (No Lag) ───
+  // ─── High Performance Canvas Painting (0 Lag) ───
   const renderCurrentFrame = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas || !currentClip) return;
@@ -125,7 +147,7 @@ export const VideoStudio: React.FC = () => {
     renderCurrentFrame();
   }, [renderCurrentFrame]);
 
-  // ─── Playback Engine (CapCut Simulation) ───
+  // ─── Playback Engine (Timeline Playhead Simulation) ───
   const stopPlayback = () => {
     if (playheadTimerRef.current) {
       clearTimeout(playheadTimerRef.current);
@@ -142,20 +164,27 @@ export const VideoStudio: React.FC = () => {
     setActiveClipIndex(clipIdx);
     setPlayPhase('normal');
 
+    const q = timeline[clipIdx];
     const cfg = studioConfig.defaultQuestionConfig;
 
-    // Phase 1: Card appears & read question
+    // Optional: Speak voiceover during playback if enabled
+    if (studioConfig.enableVoiceover) {
+      const script = q.voiceoverScript || generateVoiceoverScript(q);
+      speakHindiText(script, q.voiceoverSpeed || 1.0);
+    }
+
+    // Phase 1: Card appears
     playheadTimerRef.current = setTimeout(() => {
-      // Phase 2: Option A
+      // Phase 2: Option A dashed
       setPlayPhase('optA');
       playheadTimerRef.current = setTimeout(() => {
-        // Phase 3: Option B
+        // Phase 3: Option B dashed
         setPlayPhase('optB');
         playheadTimerRef.current = setTimeout(() => {
-          // Phase 4: Option C
+          // Phase 4: Option C dashed
           setPlayPhase('optC');
           playheadTimerRef.current = setTimeout(() => {
-            // Phase 5: Option D
+            // Phase 5: Option D dashed
             setPlayPhase('optD');
             playheadTimerRef.current = setTimeout(() => {
               // Phase 6: Timer countdown
@@ -192,10 +221,11 @@ export const VideoStudio: React.FC = () => {
     }, cfg.readTime * 1000);
   };
 
-  // ─── Timeline Manipulation ───
-  const handleSelectClip = (idx: number) => {
+  // ─── Timeline Operations ───
+  const selectClipAndTrack = (idx: number, track: SelectedTrackType) => {
     stopPlayback();
     setActiveClipIndex(idx);
+    setSelectedTrackType(track);
     setPlayPhase('normal');
   };
 
@@ -217,6 +247,7 @@ export const VideoStudio: React.FC = () => {
       ...item,
       id: `clip_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       questionNumber: (typeof item.questionNumber === 'number' ? item.questionNumber : parseInt(String(item.questionNumber), 10) || 1) + 1,
+      voiceoverScript: item.voiceoverScript || generateVoiceoverScript(item),
     };
     setTimeline((prev) => {
       const copy = [...prev];
@@ -234,9 +265,10 @@ export const VideoStudio: React.FC = () => {
   };
 
   const handleAddNewClip = () => {
-    const newQ: GKQuestion = {
+    const newNum = timeline.length + 1;
+    const baseQ: GKQuestion = {
       id: `new_${Date.now()}`,
-      questionNumber: timeline.length + 1,
+      questionNumber: newNum,
       question: 'नया प्रश्न यहाँ लिखें...',
       optionA: 'पहला विकल्प',
       optionB: 'दूसरा विकल्प',
@@ -246,8 +278,12 @@ export const VideoStudio: React.FC = () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-    setTimeline((prev) => [...prev, newQ]);
+    baseQ.voiceoverScript = generateVoiceoverScript(baseQ);
+    baseQ.voiceoverSpeed = 1.0;
+
+    setTimeline((prev) => [...prev, baseQ]);
     setActiveClipIndex(timeline.length);
+    setSelectedTrackType('video');
   };
 
   const updateCurrentClipField = (field: keyof GKQuestion, value: any) => {
@@ -257,6 +293,35 @@ export const VideoStudio: React.FC = () => {
       copy[activeClipIndex] = { ...copy[activeClipIndex], [field]: value };
       return copy;
     });
+  };
+
+  // ─── Voiceover Tools ───
+  const handleGenerateVoiceForCurrent = () => {
+    if (!currentClip) return;
+    const newScript = generateVoiceoverScript(currentClip);
+    updateCurrentClipField('voiceoverScript', newScript);
+  };
+
+  const handleAutoGenerateAllVoiceovers = () => {
+    setIsGeneratingAllVoice(true);
+    setTimeline((prev) =>
+      prev.map((q) => ({
+        ...q,
+        voiceoverScript: q.voiceoverScript || generateVoiceoverScript(q),
+        voiceoverSpeed: q.voiceoverSpeed || 1.0,
+      }))
+    );
+    setTimeout(() => {
+      setIsGeneratingAllVoice(false);
+      alert('Generated Hindi voiceover scripts for all timeline cards!');
+    }, 400);
+  };
+
+  const handleTestListenVoice = async () => {
+    if (!currentClip?.voiceoverScript) return;
+    setIsPlayingVoicePreview(true);
+    await speakHindiText(currentClip.voiceoverScript, currentClip.voiceoverSpeed || 1.0);
+    setIsPlayingVoicePreview(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,13 +361,13 @@ export const VideoStudio: React.FC = () => {
       setExportedVideoUrl(url);
     } catch (err) {
       console.error('Export error:', err);
-      alert('Video export failed. Check browser capabilities.');
+      alert('Video export failed. Please check browser capabilities.');
     } finally {
       setIsRendering(false);
     }
   };
 
-  // Duration calculations
+  // Timing Calculation
   const perClipSec =
     studioConfig.defaultQuestionConfig.readTime +
     studioConfig.defaultQuestionConfig.optionTime * 4 +
@@ -310,6 +375,7 @@ export const VideoStudio: React.FC = () => {
     1.0 + // Timeout stamp
     studioConfig.defaultQuestionConfig.revealTime;
   const totalDurationSec = Math.round(timeline.length * perClipSec);
+
   const formatTimecode = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -317,21 +383,22 @@ export const VideoStudio: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-[1700px] mx-auto bg-[#0d0d11] text-white select-none overflow-hidden">
-      {/* ─── CapCut / VN Top Command Header ─── */}
-      <div className="h-12 bg-[#141418] border-b border-[#23232b] px-4 flex items-center justify-between gap-4 shrink-0">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] max-w-[1750px] mx-auto bg-[#0e0e12] text-white select-none overflow-hidden">
+      {/* ─── CapCut / VN Top Header Bar ─── */}
+      <div className="h-12 bg-[#141419] border-b border-[#22222a] px-4 flex items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-[#1a1a22] border border-[#2b2b38] px-2.5 py-1 rounded-lg">
+          <div className="flex items-center gap-2 bg-[#1b1b22] border border-[#2b2b36] px-2.5 py-1 rounded-lg">
             <Film className="w-3.5 h-3.5 text-cyan-400" />
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="bg-transparent text-xs font-bold text-white focus:outline-none w-36 sm:w-56"
+              className="bg-transparent text-xs font-bold text-white focus:outline-none w-36 sm:w-52"
             />
           </div>
 
-          <div className="flex items-center gap-1 bg-[#1a1a22] border border-[#2b2b38] p-0.5 rounded-lg text-xs font-semibold">
+          {/* Aspect Ratio Switcher */}
+          <div className="flex items-center gap-1 bg-[#1b1b22] border border-[#2b2b36] p-0.5 rounded-lg text-xs font-semibold">
             <button
               type="button"
               onClick={() => setAspectRatio('16:9')}
@@ -358,15 +425,15 @@ export const VideoStudio: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono font-bold text-slate-400 hidden sm:inline">
-            Total Duration: <strong className="text-cyan-400">{formatTimecode(totalDurationSec)}</strong> ({timeline.length} Clips)
+          <span className="text-xs font-mono font-bold text-slate-400 hidden md:inline">
+            Timeline: <strong className="text-cyan-400">{formatTimecode(totalDurationSec)}</strong> ({timeline.length} Cards)
           </span>
 
           <button
             type="button"
             onClick={handleExportVideo}
             disabled={isRendering || timeline.length === 0}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer ${
               isRendering
                 ? 'bg-slate-700 text-slate-300 cursor-wait'
                 : timeline.length === 0
@@ -389,7 +456,7 @@ export const VideoStudio: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── Export Progress / Ready Banner ─── */}
+      {/* ─── Export Banner ─── */}
       {isRendering && (
         <div className="bg-cyan-500/20 border-b border-cyan-500/30 px-4 py-2 flex items-center justify-between text-xs font-bold text-cyan-300 shrink-0">
           <span>{renderProgress || 'Rendering video frames...'}</span>
@@ -401,7 +468,7 @@ export const VideoStudio: React.FC = () => {
         <div className="bg-emerald-500/20 border-b border-emerald-500/30 px-4 py-2.5 flex items-center justify-between gap-4 text-xs shrink-0">
           <div className="flex items-center gap-2 text-emerald-300 font-bold">
             <CheckCircle2 className="w-4 h-4" />
-            <span>Video Render Complete!</span>
+            <span>Video Render Complete! 🎉</span>
           </div>
           <div className="flex items-center gap-2">
             <a
@@ -423,20 +490,180 @@ export const VideoStudio: React.FC = () => {
         </div>
       )}
 
-      {/* ─── Middle Section: Player Monitor & CapCut Property Inspector ─── */}
+      {/* ─── Center Viewport: Left Asset Library | Monitor Player | Right CapCut Inspector ─── */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* ── Left / Center: Video Monitor Player (CapCut Stage) ── */}
+        {/* ── Left CapCut Tool Shelf (Media, Voice, SFX, Overlays) ── */}
+        <div className="w-64 bg-[#121216] border-r border-[#202028] flex flex-col min-h-0 shrink-0 hidden md:flex">
+          {/* Tabs */}
+          <div className="h-10 bg-[#16161c] border-b border-[#22222a] px-2 flex items-center justify-around text-xs font-bold shrink-0">
+            <button
+              type="button"
+              onClick={() => setLeftNavTab('media')}
+              className={`flex-1 py-1.5 text-center rounded transition-colors ${
+                leftNavTab === 'media' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Media
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeftNavTab('voice')}
+              className={`flex-1 py-1.5 text-center rounded transition-colors ${
+                leftNavTab === 'voice' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Voice
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeftNavTab('audio')}
+              className={`flex-1 py-1.5 text-center rounded transition-colors ${
+                leftNavTab === 'audio' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              SFX
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeftNavTab('overlay')}
+              className={`flex-1 py-1.5 text-center rounded transition-colors ${
+                leftNavTab === 'overlay' ? 'bg-[#22222c] text-cyan-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Brand
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+            {/* Tab: Media / Cards Library */}
+            {leftNavTab === 'media' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Saved Cards ({library.length})</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prepared = library.map((q) => ({
+                        ...q,
+                        voiceoverScript: q.voiceoverScript || generateVoiceoverScript(q),
+                      }));
+                      setTimeline(prepared);
+                    }}
+                    className="text-cyan-400 font-bold hover:underline"
+                  >
+                    + Add All
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  {library.map((q) => (
+                    <div
+                      key={q.id}
+                      className="p-2 rounded-lg bg-[#191920] border border-[#252530] hover:border-[#383846] flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-white truncate">{q.question}</p>
+                        <p className="text-[9px] text-slate-500">Ans: {q.correctAnswer || 'A'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newClip: GKQuestion = {
+                            ...q,
+                            voiceoverScript: q.voiceoverScript || generateVoiceoverScript(q),
+                          };
+                          setTimeline((prev) => [...prev, newClip]);
+                        }}
+                        className="p-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-[10px] shrink-0"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Voiceover Generator */}
+            {leftNavTab === 'voice' && (
+              <div className="space-y-3">
+                <div className="p-3 bg-[#191920] border border-[#262634] rounded-xl space-y-2">
+                  <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                    <Mic className="w-3.5 h-3.5" />
+                    <span>AI Voiceover Engine</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Auto-generates natural Hindi voice clips for every card directly onto your timeline.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAutoGenerateAllVoiceovers}
+                    disabled={isGeneratingAllVoice || timeline.length === 0}
+                    className="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-black rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>{isGeneratingAllVoice ? 'Generating...' : 'Auto-Generate All Voices'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Audio SFX */}
+            {leftNavTab === 'audio' && (
+              <div className="space-y-2">
+                <div className="p-2.5 bg-[#191920] border border-[#252530] rounded-lg space-y-2">
+                  <span className="font-bold text-white text-xs block">Sound FX Library</span>
+                  <label className="flex items-center justify-between cursor-pointer p-1.5 rounded bg-[#131318]">
+                    <span className="text-[11px] text-slate-300">Clock Tick (Countdown)</span>
+                    <input
+                      type="checkbox"
+                      checked={studioConfig.enableSoundEffects}
+                      onChange={(e) => setStudioConfig({ ...studioConfig, enableSoundEffects: e.target.checked })}
+                      className="accent-cyan-400"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer p-1.5 rounded bg-[#131318]">
+                    <span className="text-[11px] text-slate-300">Success Chime (Answer)</span>
+                    <input
+                      type="checkbox"
+                      checked={studioConfig.enableSoundEffects}
+                      onChange={(e) => setStudioConfig({ ...studioConfig, enableSoundEffects: e.target.checked })}
+                      className="accent-cyan-400"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Brand & Watermark */}
+            {leftNavTab === 'overlay' && (
+              <div className="space-y-2">
+                <label className="font-bold text-slate-300 block text-[11px]">Channel Logo / Watermark</label>
+                <input
+                  type="text"
+                  value={studioConfig.channelWatermarkText || ''}
+                  onChange={(e) => setStudioConfig({ ...studioConfig, channelWatermarkText: e.target.value })}
+                  placeholder="e.g. Daily Knowledge"
+                  className="w-full p-2 bg-[#191920] border border-[#2b2b38] rounded-lg text-xs text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Central Stage: Video Preview Monitor ── */}
         <div className="flex-1 flex flex-col bg-[#0b0b0e] min-h-0 border-r border-[#1e1e26]">
-          {/* Stage Header / Phase Indicators */}
+          {/* Stage Phase Quick Scrubbers */}
           <div className="h-9 px-3 bg-[#111116] border-b border-[#1e1e26] flex items-center justify-between text-xs text-slate-400 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white">Monitor</span>
+              <span className="font-bold text-white">Player Monitor</span>
               <span className="text-[10px] px-2 py-0.5 rounded bg-[#1e1e28] text-cyan-400 font-bold">
                 Clip {timeline.length > 0 ? `${activeClipIndex + 1}/${timeline.length}` : '0/0'}
               </span>
             </div>
 
-            {/* Quick Preview Step Scrubbers */}
+            {/* Fast Stage Preview Buttons */}
             <div className="flex items-center gap-1 text-[10px] font-bold">
               <button
                 type="button"
@@ -523,12 +750,12 @@ export const VideoStudio: React.FC = () => {
             </div>
           </div>
 
-          {/* Transport Bar (Play/Pause, Step, Timecode) */}
+          {/* Transport Bar */}
           <div className="h-11 bg-[#131318] border-t border-[#1e1e26] px-4 flex items-center justify-between text-xs shrink-0">
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => handleSelectClip(0)}
+                onClick={() => selectClipAndTrack(0, 'video')}
                 className="p-1 text-slate-400 hover:text-white"
                 title="Go to Start"
               >
@@ -538,7 +765,7 @@ export const VideoStudio: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleSelectClip(Math.max(0, activeClipIndex - 1))}
+                onClick={() => selectClipAndTrack(Math.max(0, activeClipIndex - 1), 'video')}
                 disabled={activeClipIndex === 0}
                 className="p-1 text-slate-400 hover:text-white disabled:opacity-20"
                 title="Previous Clip"
@@ -561,7 +788,7 @@ export const VideoStudio: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => handleSelectClip(Math.min(timeline.length - 1, activeClipIndex + 1))}
+                onClick={() => selectClipAndTrack(Math.min(timeline.length - 1, activeClipIndex + 1), 'video')}
                 disabled={activeClipIndex >= timeline.length - 1}
                 className="p-1 text-slate-400 hover:text-white disabled:opacity-20"
                 title="Next Clip"
@@ -580,60 +807,27 @@ export const VideoStudio: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Right: CapCut Property Inspector (Edit Anything!) ── */}
+        {/* ── Right: CapCut Property Inspector (Selected Track Elements) ── */}
         <div className="w-full lg:w-96 bg-[#131317] flex flex-col min-h-0 shrink-0 border-l border-[#202028]">
-          {/* Inspector Tabs */}
-          <div className="h-10 bg-[#17171d] border-b border-[#23232e] px-2 flex items-center justify-between text-xs font-bold shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveInspectorTab('content')}
-              className={`flex-1 py-2 text-center rounded transition-colors ${
-                activeInspectorTab === 'content' ? 'bg-[#252530] text-cyan-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Text & Q
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveInspectorTab('media')}
-              className={`flex-1 py-2 text-center rounded transition-colors ${
-                activeInspectorTab === 'media' ? 'bg-[#252530] text-cyan-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Media
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveInspectorTab('audio')}
-              className={`flex-1 py-2 text-center rounded transition-colors ${
-                activeInspectorTab === 'audio' ? 'bg-[#252530] text-cyan-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Timing & FX
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveInspectorTab('settings')}
-              className={`flex-1 py-2 text-center rounded transition-colors ${
-                activeInspectorTab === 'settings' ? 'bg-[#252530] text-cyan-400' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Brand
-            </button>
+          <div className="h-10 bg-[#17171d] border-b border-[#23232e] px-4 flex items-center justify-between text-xs font-bold shrink-0">
+            <span className="text-white flex items-center gap-1.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+              {selectedTrackType === 'video' && 'Card Video Clip'}
+              {selectedTrackType === 'voiceover' && 'Voiceover Audio Clip'}
+              {selectedTrackType === 'timer' && 'Countdown Timer Clip'}
+              {selectedTrackType === 'sfx' && 'Audio Effects Clip'}
+            </span>
+            <span className="text-[10px] text-slate-400">Q#{currentClip?.questionNumber || activeClipIndex + 1}</span>
           </div>
 
-          {/* Inspector Content Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
             {currentClip ? (
               <>
-                {/* ── TAB 1: Content (Question & Options) ── */}
-                {activeInspectorTab === 'content' && (
+                {/* ── Video Track Selected: Question & Options ── */}
+                {selectedTrackType === 'video' && (
                   <div className="space-y-3">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="font-bold text-slate-300">Question Text</label>
-                        <span className="text-[10px] text-slate-500">#{currentClip.questionNumber || activeClipIndex + 1}</span>
-                      </div>
+                      <label className="font-bold text-slate-300 block mb-1">Question Text</label>
                       <textarea
                         rows={3}
                         value={currentClip.question}
@@ -643,7 +837,7 @@ export const VideoStudio: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="font-bold text-slate-300 block">Options A, B, C, D</label>
+                      <label className="font-bold text-slate-300 block">Options & Correct Answer</label>
                       {(['A', 'B', 'C', 'D'] as const).map((letter) => {
                         const fieldName = `option${letter}` as keyof GKQuestion;
                         const isCorrect = (currentClip.correctAnswer || 'A') === letter;
@@ -657,7 +851,7 @@ export const VideoStudio: React.FC = () => {
                                   ? 'bg-green-500 text-black shadow-sm'
                                   : 'bg-[#22222d] text-slate-400 hover:text-white border border-[#333342]'
                               }`}
-                              title={isCorrect ? 'Correct Answer' : 'Click to set as correct answer'}
+                              title="Click to set as correct answer"
                             >
                               {letter}
                             </button>
@@ -673,108 +867,95 @@ export const VideoStudio: React.FC = () => {
                         );
                       })}
                     </div>
-                  </div>
-                )}
 
-                {/* ── TAB 2: Media & Image ── */}
-                {activeInspectorTab === 'media' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="font-bold text-slate-300 block mb-2">Subject Image / PNG Clipart</label>
-                      <div className="p-3 bg-[#181820] border border-[#282836] rounded-xl flex items-center gap-3">
-                        <div className="w-16 h-16 rounded-lg bg-black/40 border border-[#333344] overflow-hidden flex items-center justify-center shrink-0">
-                          {currentClip.image ? (
-                            <img src={currentClip.image} alt="card" className="w-full h-full object-contain" />
-                          ) : (
-                            <ImageIcon className="w-6 h-6 text-slate-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-1.5">
+                    <div className="pt-2 border-t border-[#22222d] space-y-2">
+                      <label className="font-bold text-slate-300 block">Custom Subject PNG</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png,image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1 py-2 px-3 bg-[#1e1e28] hover:bg-[#252532] border border-[#2d2d3c] text-cyan-400 font-bold rounded-lg text-center transition-colors"
+                        >
+                          Choose PNG File
+                        </button>
+                        {currentClip.image && (
                           <button
                             type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-full py-1.5 px-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg font-bold text-xs transition-colors"
+                            onClick={() => updateCurrentClipField('image', undefined)}
+                            className="px-2.5 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 rounded-lg"
                           >
-                            Upload Custom PNG
+                            Remove
                           </button>
-                          {currentClip.image && (
-                            <button
-                              type="button"
-                              onClick={() => updateCurrentClipField('image', undefined)}
-                              className="w-full py-1 px-3 text-slate-400 hover:text-red-400 text-[11px]"
-                            >
-                              Remove Image
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/png,image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
                     </div>
                   </div>
                 )}
 
-                {/* ── TAB 3: Timing & Audio (CapCut Presets) ── */}
-                {activeInspectorTab === 'audio' && (
+                {/* ── Voiceover Track Selected: Script Editor & Speed ── */}
+                {selectedTrackType === 'voiceover' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-300">Spoken Voiceover Script (Hindi/English)</label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateVoiceForCurrent}
+                        className="text-[10px] text-cyan-400 hover:underline"
+                      >
+                        Reset to Default
+                      </button>
+                    </div>
+
+                    <textarea
+                      rows={5}
+                      value={currentClip.voiceoverScript || ''}
+                      onChange={(e) => updateCurrentClipField('voiceoverScript', e.target.value)}
+                      placeholder="Enter voice narration script..."
+                      className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:border-cyan-500 focus:outline-none leading-relaxed"
+                    />
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-300">Voice Speed</span>
+                        <span className="font-mono text-cyan-400 font-bold">
+                          {(currentClip.voiceoverSpeed || 1.0).toFixed(1)}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.7"
+                        max="1.4"
+                        step="0.1"
+                        value={currentClip.voiceoverSpeed || 1.0}
+                        onChange={(e) => updateCurrentClipField('voiceoverSpeed', parseFloat(e.target.value))}
+                        className="w-full accent-cyan-400"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleTestListenVoice}
+                      disabled={isPlayingVoicePreview}
+                      className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{isPlayingVoicePreview ? 'Speaking...' : 'Test / Listen Voice'}</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Timer Track Selected: Duration & Style ── */}
+                {selectedTrackType === 'timer' && (
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-slate-300">Question Reading Time</span>
-                        <span className="font-mono text-cyan-400 font-bold">{studioConfig.defaultQuestionConfig.readTime}s</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="6"
-                        step="0.5"
-                        value={studioConfig.defaultQuestionConfig.readTime}
-                        onChange={(e) =>
-                          setStudioConfig({
-                            ...studioConfig,
-                            defaultQuestionConfig: {
-                              ...studioConfig.defaultQuestionConfig,
-                              readTime: parseFloat(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full accent-cyan-400"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-slate-300">Option Highlight Time</span>
-                        <span className="font-mono text-cyan-400 font-bold">{studioConfig.defaultQuestionConfig.optionTime}s</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.6"
-                        max="3"
-                        step="0.2"
-                        value={studioConfig.defaultQuestionConfig.optionTime}
-                        onChange={(e) =>
-                          setStudioConfig({
-                            ...studioConfig,
-                            defaultQuestionConfig: {
-                              ...studioConfig.defaultQuestionConfig,
-                              optionTime: parseFloat(e.target.value),
-                            },
-                          })
-                        }
-                        className="w-full accent-cyan-400"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-slate-300">Countdown Timer Seconds</span>
-                        <span className="font-mono text-cyan-400 font-bold">{studioConfig.defaultQuestionConfig.timerTime}s</span>
-                      </div>
+                      <label className="font-bold text-slate-300 block mb-1">Countdown Duration</label>
                       <div className="grid grid-cols-3 gap-2">
                         {[3, 5, 10].map((t) => (
                           <button
@@ -789,84 +970,74 @@ export const VideoStudio: React.FC = () => {
                                 },
                               })
                             }
-                            className={`py-1.5 rounded-lg font-bold border transition-colors ${
+                            className={`py-2 rounded-lg font-bold border transition-colors ${
                               studioConfig.defaultQuestionConfig.timerTime === t
                                 ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
                                 : 'bg-[#1a1a22] border-[#2b2b38] text-slate-400 hover:text-white'
                             }`}
                           >
-                            {t} Seconds
+                            {t}s Timer
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-[#23232f] space-y-2">
-                      <label className="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#191922]">
-                        <span className="font-bold text-slate-300">Clock Tick & Ding SFX</span>
-                        <input
-                          type="checkbox"
-                          checked={studioConfig.enableSoundEffects}
-                          onChange={(e) => setStudioConfig({ ...studioConfig, enableSoundEffects: e.target.checked })}
-                          className="accent-cyan-400 w-4 h-4 rounded"
-                        />
-                      </label>
-
-                      <label className="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#191922]">
-                        <span className="font-bold text-slate-300">Hindi Voiceover (TTS)</span>
-                        <input
-                          type="checkbox"
-                          checked={studioConfig.enableVoiceover}
-                          onChange={(e) => setStudioConfig({ ...studioConfig, enableVoiceover: e.target.checked })}
-                          className="accent-cyan-400 w-4 h-4 rounded"
-                        />
-                      </label>
+                    <div className="p-3 rounded-lg bg-[#181820] border border-[#252532] text-slate-400 text-[11px] space-y-1">
+                      <p className="font-bold text-white">Split Ring Design (1:1 Reference):</p>
+                      <p>• Left Blue Arc + Right Red Arc with bold brown digit.</p>
+                      <p>• Automatically triggers "TIME OUT" badge at 0 seconds.</p>
                     </div>
                   </div>
                 )}
 
-                {/* ── TAB 4: Branding & Watermark ── */}
-                {activeInspectorTab === 'settings' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="font-bold text-slate-300 block mb-1">Center Channel Watermark</label>
+                {/* ── SFX Track Selected: Sound Controls ── */}
+                {selectedTrackType === 'sfx' && (
+                  <div className="space-y-3">
+                    <label className="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#181820]">
+                      <span className="font-bold text-slate-300">Clock Tick Audio</span>
                       <input
-                        type="text"
-                        value={studioConfig.channelWatermarkText || ''}
-                        onChange={(e) => setStudioConfig({ ...studioConfig, channelWatermarkText: e.target.value })}
-                        placeholder="e.g. Daily Knowledge"
-                        className="w-full p-2.5 rounded-lg bg-[#1a1a22] border border-[#2b2b38] text-white focus:outline-none focus:border-cyan-500"
+                        type="checkbox"
+                        checked={studioConfig.enableSoundEffects}
+                        onChange={(e) => setStudioConfig({ ...studioConfig, enableSoundEffects: e.target.checked })}
+                        className="accent-cyan-400 w-4 h-4 rounded"
                       />
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        Displays in the center of the video between options and character.
-                      </p>
-                    </div>
+                    </label>
+
+                    <label className="flex items-center justify-between cursor-pointer p-2 rounded-lg bg-[#181820]">
+                      <span className="font-bold text-slate-300">Answer Reveal Ding Chime</span>
+                      <input
+                        type="checkbox"
+                        checked={studioConfig.enableSoundEffects}
+                        onChange={(e) => setStudioConfig({ ...studioConfig, enableSoundEffects: e.target.checked })}
+                        className="accent-cyan-400 w-4 h-4 rounded"
+                      />
+                    </label>
                   </div>
                 )}
               </>
             ) : (
               <div className="text-center py-10 text-slate-500">
-                No clip selected. Select a clip from the timeline below.
+                No element selected on timeline.
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ─── Bottom: Multi-Track Timeline (CapCut / VN Signature Layout) ─── */}
-      <div className="h-44 bg-[#111115] border-t border-[#202028] flex flex-col shrink-0">
-        {/* Timeline Header Bar / Tools */}
-        <div className="h-9 px-4 bg-[#16161c] border-b border-[#22222a] flex items-center justify-between text-xs text-slate-400 shrink-0">
+      {/* ─── Bottom: TRUE MULTI-TRACK TIMELINE (CapCut / VN Signature Layout) ─── */}
+      <div className="h-52 bg-[#111115] border-t border-[#202028] flex flex-col shrink-0">
+        {/* Timeline Tools Header */}
+        <div className="h-9 px-4 bg-[#15151b] border-b border-[#202026] flex items-center justify-between text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white flex items-center gap-1.5">
+            <span className="font-bold text-white flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              Timeline
+              Multi-Track Timeline
             </span>
 
             <button
               type="button"
               onClick={handleAddNewClip}
-              className="px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded font-bold text-[11px] flex items-center gap-1 transition-colors"
+              className="px-2 py-0.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               <span>Add Card</span>
@@ -877,7 +1048,7 @@ export const VideoStudio: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleDuplicateClip(activeClipIndex)}
-                  className="px-2 py-0.5 bg-[#20202a] hover:bg-[#2a2a38] text-slate-300 rounded font-semibold text-[11px] flex items-center gap-1"
+                  className="px-2 py-0.5 bg-[#1f1f28] hover:bg-[#282834] text-slate-300 rounded font-semibold text-[11px] flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
                   <span>Duplicate</span>
@@ -918,13 +1089,11 @@ export const VideoStudio: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => {
-                const saved = getStoredQuestions();
-                setTimeline(saved);
-              }}
-              className="text-[11px] text-cyan-400 hover:underline"
+              onClick={handleAutoGenerateAllVoiceovers}
+              className="text-[11px] text-purple-400 hover:underline font-bold flex items-center gap-1"
             >
-              Sync Saved Cards
+              <Mic className="w-3 h-3" />
+              <span>Auto-Voice All</span>
             </button>
 
             <button
@@ -932,72 +1101,138 @@ export const VideoStudio: React.FC = () => {
               onClick={() => setTimeline([])}
               className="text-[11px] text-red-400 hover:underline"
             >
-              Clear All
+              Clear
             </button>
           </div>
         </div>
 
-        {/* Multi-Track Scroll Area */}
-        <div className="flex-1 overflow-x-auto p-3 flex flex-col gap-2 no-scrollbar">
-          {/* Track 1: Video Question Cards */}
+        {/* Multi-Track Canvas & Scroller */}
+        <div className="flex-1 overflow-x-auto p-2.5 flex flex-col gap-1.5 no-scrollbar bg-[#0f0f13]">
+          {/* TRACK 1: Overlays & Timer Track */}
           <div className="flex items-center gap-2 min-w-max">
-            <div className="w-16 text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
+            <div className="w-20 text-[10px] font-bold text-amber-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Timer className="w-3 h-3 text-amber-400" />
+              <span>Timer</span>
+            </div>
+
+            {timeline.map((_, idx) => {
+              const isClipActive = activeClipIndex === idx && selectedTrackType === 'timer';
+              return (
+                <div
+                  key={idx}
+                  onClick={() => selectClipAndTrack(idx, 'timer')}
+                  className={`w-48 h-6 rounded px-2 flex items-center justify-between text-[10px] font-bold cursor-pointer transition-colors shrink-0 ${
+                    isClipActive
+                      ? 'bg-amber-500/30 border border-amber-400 text-amber-200'
+                      : 'bg-[#1a1712] border border-[#2b2318] text-amber-400/80 hover:bg-[#241f17]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    <span>5s Countdown & Out</span>
+                  </span>
+                  <span className="text-[9px] font-mono opacity-60">5.0s</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* TRACK 2: Video Track (Cards) */}
+          <div className="flex items-center gap-2 min-w-max">
+            <div className="w-20 text-[10px] font-bold text-cyan-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
               <Film className="w-3 h-3 text-cyan-400" />
               <span>Video</span>
             </div>
 
             {timeline.map((q, idx) => {
-              const isActive = activeClipIndex === idx;
+              const isClipActive = activeClipIndex === idx && selectedTrackType === 'video';
               return (
                 <div
                   key={`${q.id}-${idx}`}
-                  onClick={() => handleSelectClip(idx)}
-                  className={`relative w-44 h-16 rounded-lg p-2 flex flex-col justify-between cursor-pointer transition-all shrink-0 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#1e293b] to-[#0f172a] border-2 border-cyan-400 shadow-md shadow-cyan-500/20'
-                      : 'bg-[#1a1a22] border border-[#2b2b38] hover:bg-[#22222d]'
+                  onClick={() => selectClipAndTrack(idx, 'video')}
+                  className={`relative w-48 h-14 rounded-lg p-1.5 flex flex-col justify-between cursor-pointer transition-all shrink-0 ${
+                    isClipActive
+                      ? 'bg-gradient-to-r from-[#182635] to-[#121c27] border-2 border-cyan-400 shadow-md shadow-cyan-500/20'
+                      : 'bg-[#181820] border border-[#262634] hover:bg-[#20202c]'
                   }`}
                 >
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-bold text-cyan-300">
-                      Q{idx + 1}
+                    <span className="font-bold text-cyan-300 flex items-center gap-1">
+                      <span>Q{idx + 1}</span>
+                      <span className="text-slate-400 font-normal truncate max-w-[90px]">{q.question}</span>
                     </span>
                     <span className="font-mono text-slate-400 text-[9px] bg-black/40 px-1 rounded">
                       {perClipSec.toFixed(1)}s
                     </span>
                   </div>
 
-                  <p className="text-[11px] font-semibold text-white line-clamp-1">
-                    {q.question || 'Untitled'}
-                  </p>
-
                   <div className="flex items-center justify-between text-[9px] text-slate-400">
                     <span>Ans: <strong className="text-green-400">{q.correctAnswer || 'A'}</strong></span>
-                    {isActive && <span className="text-cyan-400 font-bold">● Active</span>}
+                    {isClipActive && <span className="text-cyan-400 font-bold">● Active</span>}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Track 2: Audio & SFX Track */}
+          {/* TRACK 3: Voiceover Audio Track (TTS) */}
           <div className="flex items-center gap-2 min-w-max">
-            <div className="w-16 text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <Music className="w-3 h-3 text-purple-400" />
-              <span>Audio</span>
+            <div className="w-20 text-[10px] font-bold text-purple-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Mic className="w-3 h-3 text-purple-400" />
+              <span>Voice</span>
             </div>
 
-            {timeline.map((_, idx) => (
-              <div
-                key={idx}
-                className="w-44 h-6 rounded bg-[#161622] border border-[#262638] px-2 flex items-center justify-between text-[9px] text-purple-300 shrink-0"
-              >
-                <span className="flex items-center gap-1">
-                  <Volume2 className="w-2.5 h-2.5" />
-                  <span>Voiceover + Timer SFX</span>
-                </span>
-              </div>
-            ))}
+            {timeline.map((q, idx) => {
+              const isClipActive = activeClipIndex === idx && selectedTrackType === 'voiceover';
+              return (
+                <div
+                  key={idx}
+                  onClick={() => selectClipAndTrack(idx, 'voiceover')}
+                  className={`w-48 h-7 rounded px-2 flex items-center justify-between text-[10px] font-bold cursor-pointer transition-colors shrink-0 ${
+                    isClipActive
+                      ? 'bg-purple-600/30 border border-purple-400 text-purple-200'
+                      : 'bg-[#191522] border border-[#2b223a] text-purple-400/90 hover:bg-[#221c30]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 truncate max-w-[130px]">
+                    <Mic className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{q.voiceoverScript ? 'Voiceover (Edit)' : '+ Add Script'}</span>
+                  </span>
+                  <span className="text-[9px] font-mono text-purple-400/60">
+                    {(q.voiceoverSpeed || 1.0).toFixed(1)}x
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* TRACK 4: Audio Sound FX Track */}
+          <div className="flex items-center gap-2 min-w-max">
+            <div className="w-20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <Music className="w-3 h-3 text-emerald-400" />
+              <span>SFX</span>
+            </div>
+
+            {timeline.map((_, idx) => {
+              const isClipActive = activeClipIndex === idx && selectedTrackType === 'sfx';
+              return (
+                <div
+                  key={idx}
+                  onClick={() => selectClipAndTrack(idx, 'sfx')}
+                  className={`w-48 h-6 rounded px-2 flex items-center justify-between text-[9px] font-bold cursor-pointer transition-colors shrink-0 ${
+                    isClipActive
+                      ? 'bg-emerald-500/30 border border-emerald-400 text-emerald-200'
+                      : 'bg-[#121c17] border border-[#1a2d24] text-emerald-400/80 hover:bg-[#182620]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <Volume2 className="w-2.5 h-2.5" />
+                    <span>Tick Tick + Ding</span>
+                  </span>
+                  <span className="text-[8px] opacity-60">Synced</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

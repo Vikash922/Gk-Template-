@@ -15,6 +15,12 @@ export interface GKQuestion {
   createdAt: number;
   updatedAt: number;
   customDesign?: Partial<CardDesignConfig>; // Per-card layout & design overrides
+  voiceoverScript?: string; // Spoken text for audio voiceover track
+  voiceoverSpeed?: number; // TTS speed multiplier (e.g. 1.0)
+  readDuration?: number; // Reading hold seconds
+  optionDuration?: number; // Duration per option highlight
+  timerDuration?: number; // Countdown seconds (e.g. 5)
+  revealDuration?: number; // Hold seconds for green answer reveal
 }
 
 export type OptionKey = 'optionA' | 'optionB' | 'optionC' | 'optionD';

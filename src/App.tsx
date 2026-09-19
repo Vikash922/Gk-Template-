@@ -39,6 +39,7 @@ import {
   Download,
   Bookmark,
   Sparkles,
+  Film,
 } from 'lucide-react';
 
 export default function App() {
@@ -248,6 +249,29 @@ export default function App() {
     showToast(`Image set for all ${updatedList.length} saved cards!`, 'success');
   };
 
+  const handleOpenQuestionsInVideoEditor = (questions: GKQuestion[]) => {
+    if (!questions || questions.length === 0) return;
+    const generated = generateTimelineFromQuestions(questions, {
+      aspectRatio: '16:9',
+      stylePreset: 'reference',
+      readTime: 2.5,
+      optionIntervalTime: 0.75,
+      timerTime: 5.0,
+      revealTime: 2.5,
+      enableVoiceover: true,
+      voiceoverSpeed: 1.0,
+      enableSfx: true,
+    });
+    setVideoProject(generated);
+    setCurrentTab('video');
+    showToast(
+      questions.length === 1
+        ? `🎬 Opened Card #${questions[0].questionNumber || 1} in 16:9 Video Studio!`
+        : `🎬 Created 16:9 Video Episode with ${questions.length} questions!`,
+      'success'
+    );
+  };
+
   const filteredQuestions = savedQuestions.filter((q) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -315,6 +339,7 @@ export default function App() {
                   onDuplicate={() => handleDuplicateCurrent()}
                   onUpdateDesign={handleEditorLayoutUpdate}
                   onOpenPositionControls={() => setActiveEditorSection('layout')}
+                  onOpenInVideoEditor={(q) => handleOpenQuestionsInVideoEditor([q])}
                 />
               </div>
             </div>
@@ -450,15 +475,31 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search questions or options..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs bg-white"
-                />
+              <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                {savedQuestions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQuestionsInVideoEditor(savedQuestions)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer shrink-0"
+                    title="Convert all saved questions into a 16:9 Video Episode"
+                  >
+                    <Film className="w-3.5 h-3.5 text-violet-200" />
+                    <span className="hidden sm:inline">Export All to Video</span>
+                    <span className="sm:hidden">Video</span>
+                    <span>({savedQuestions.length})</span>
+                  </button>
+                )}
+
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search questions or options..."
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs bg-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -473,6 +514,7 @@ export default function App() {
                     onEdit={handleEditSaved}
                     onDuplicate={handleDuplicateCurrent}
                     onDelete={handleDeleteSaved}
+                    onOpenInVideoEditor={(singleQ) => handleOpenQuestionsInVideoEditor([singleQ])}
                   />
                 ))}
               </div>
@@ -520,22 +562,7 @@ export default function App() {
                 setActiveEditorSection('question');
                 setCurrentTab('editor');
               }}
-              onOpenInVideoEditor={(batchQuestions) => {
-                const generated = generateTimelineFromQuestions(batchQuestions, {
-                  aspectRatio: '16:9',
-                  stylePreset: 'reference',
-                  readTime: 2.5,
-                  optionIntervalTime: 0.75,
-                  timerTime: 5.0,
-                  revealTime: 2.5,
-                  enableVoiceover: true,
-                  voiceoverSpeed: 1.0,
-                  enableSfx: true,
-                });
-                setVideoProject(generated);
-                setCurrentTab('video');
-                showToast(`🎬 Created 16:9 Video Episode with ${batchQuestions.length} questions!`, 'success');
-              }}
+              onOpenInVideoEditor={handleOpenQuestionsInVideoEditor}
             />
           </div>
         )}

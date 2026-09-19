@@ -1,4 +1,5 @@
 import { GKQuestion } from '../../types/question';
+import { findCuratedAssetByQuery } from '../../constants/curatedImages';
 import {
   VideoProject,
   Track,
@@ -8,21 +9,6 @@ import {
   AudioElement,
   ImageElement,
 } from '../types';
-
-export interface GKGeneratorSettings {
-  aspectRatio: '9:16' | '16:9';
-  readTime: number; // e.g. 2.5s
-  optionIntervalTime: number; // e.g. 0.8s per option
-  timerTime: number; // e.g. 5.0s
-  revealTime: number; // e.g. 2.5s
-  enableVoiceover: boolean;
-  voiceoverSpeed: number;
-  enableSfx: boolean;
-  questionBgColor?: string;
-  optionBgColor?: string;
-  correctOptionBgColor?: string;
-  canvasBgColor?: string;
-}
 
 export interface GKGeneratorSettings {
   aspectRatio: '9:16' | '16:9';
@@ -175,15 +161,21 @@ export function generateTimelineFromQuestions(
     findTrack(project, 'track_video')?.clips.push(bgClip);
 
     // ── 2. Image / PNG Clip (on track_image) ──
-    if (q.image || q.imageTopic) {
+    const resolvedImgSrc =
+      q.image ||
+      (q.imageTopic ? findCuratedAssetByQuery(q.imageTopic).svgDataUri : '') ||
+      (q.question ? findCuratedAssetByQuery(q.question).svgDataUri : '');
+
+    if (resolvedImgSrc) {
       const imgX = isPortrait ? W / 2 : 1380;
       const imgY = isPortrait ? H * 0.36 : 510;
       const imgW = isPortrait ? W * 0.75 : 700;
       const imgH = isPortrait ? H * 0.22 : 460;
 
       const imgData: ImageElement = {
-        src: q.image || '',
+        src: resolvedImgSrc,
         topic: q.imageTopic,
+        fit: 'contain',
         mask: 'rounded',
         borderRadius: 20,
         borderColor: isReferenceStyle ? '#15803d' : '#38bdf8',

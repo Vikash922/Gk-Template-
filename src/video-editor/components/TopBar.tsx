@@ -121,31 +121,31 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           type="button"
           onClick={onOpenProjectManager}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+          className="hidden sm:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           title="Projects / File Menu"
         >
           <FolderOpen className="w-4 h-4" />
         </button>
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-l border-[#262c3e] pl-1.5 sm:pl-2 ml-0.5 sm:ml-1">
+        <div className="flex items-center gap-0.5 border-l border-[#262c3e] pl-1 sm:pl-2 ml-0.5">
           <button
             type="button"
             onClick={undo}
             disabled={!canUndo}
-            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
             title="Undo (Ctrl+Z)"
           >
-            <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
             onClick={redo}
             disabled={!canRedo}
-            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-colors cursor-pointer"
             title="Redo (Ctrl+Y)"
           >
-            <RotateCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <RotateCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -176,33 +176,33 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Center: Aspect Ratio Switcher (Accessible on Mobile & Desktop) */}
-      <div className="flex items-center gap-1 bg-[#181c28] border border-[#2c3246] p-0.5 sm:p-1 rounded-xl text-[11px] sm:text-xs font-semibold">
+      {/* Center: Aspect Ratio Switcher (Compact and clean on Mobile) */}
+      <div className="flex items-center gap-0.5 sm:gap-1 bg-[#181c28] border border-[#2c3246] p-0.5 sm:p-1 rounded-xl text-[10px] sm:text-xs font-semibold shrink-0">
         <button
           type="button"
           onClick={() => handleAspectRatioChange('16:9')}
-          className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+          className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
             project.aspectRatio === '16:9'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-400 hover:text-white'
           }`}
           title="16:9 YouTube Landscape"
         >
-          <Monitor className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <Monitor className="w-3 h-3" />
           <span>16:9</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleAspectRatioChange('9:16')}
-          className={`px-2 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+          className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
             project.aspectRatio === '9:16'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-400 hover:text-white'
           }`}
           title="9:16 Shorts / Reels Portrait"
         >
-          <Smartphone className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <Smartphone className="w-3 h-3" />
           <span>9:16</span>
         </button>
 
@@ -216,13 +216,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           }`}
           title="1:1 Square"
         >
-          <Square className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <Square className="w-3 h-3" />
           <span>1:1</span>
         </button>
       </div>
 
-      {/* Right: Fullscreen + GK Video Wizard + Export */}
-      <div className="flex items-center gap-1 sm:gap-2">
+      {/* Right: Fullscreen + GK Generator (Desktop) + Export */}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         {/* Fullscreen Button */}
         <button
           type="button"
@@ -231,21 +231,21 @@ export const TopBar: React.FC<TopBarProps> = ({
           title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (Mobile Clean Edit)'}
         >
           {isFullscreen ? (
-            <Minimize className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
+            <Minimize className="w-3.5 h-3.5 text-cyan-400" />
           ) : (
-            <Maximize className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Maximize className="w-3.5 h-3.5" />
           )}
         </button>
 
+        {/* GK Generator (Only on md+ screens; on mobile it is in bottom dock) */}
         <button
           type="button"
           onClick={onOpenGkGenerator}
-          className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold text-[11px] sm:text-xs flex items-center gap-1 sm:gap-1.5 transition-colors cursor-pointer"
+          className="hidden md:flex px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold text-xs items-center gap-1.5 transition-colors cursor-pointer"
           title="Auto Generate GK Video sequence from questions"
         >
-          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
-          <span className="hidden sm:inline">GK Generator</span>
-          <span className="sm:hidden">GK</span>
+          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <span>GK Generator</span>
         </button>
 
         <button
@@ -253,7 +253,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           onClick={onOpenExportModal}
           className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1 sm:gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
         >
-          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <Download className="w-3.5 h-3.5" />
           <span>Export</span>
         </button>
       </div>

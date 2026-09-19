@@ -198,20 +198,20 @@ export const Timeline: React.FC = () => {
   }
 
   return (
-    <div className="h-64 sm:h-72 bg-[#0c0e14] border-t border-[#222634] flex flex-col shrink-0 select-none overflow-hidden z-20">
+    <div className="h-52 sm:h-72 bg-[#0c0e14] border-t border-[#222634] flex flex-col shrink-0 select-none overflow-hidden z-20">
       {/* ── Timeline Action Bar ── */}
-      <div className="h-9 bg-[#11131a] border-b border-[#212637] px-3 flex items-center justify-between text-xs text-slate-300 shrink-0">
+      <div className="h-9 bg-[#11131a] border-b border-[#212637] px-2 sm:px-3 flex items-center justify-between text-xs text-slate-300 shrink-0">
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Split */}
           <button
             type="button"
             disabled={!selectedClip}
             onClick={() => selectedClip && splitClipAtPlayhead(selectedClip.id)}
-            className="p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-[#23293a] border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-white flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            className="p-1 sm:p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-[#23293a] border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-white flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold cursor-pointer"
             title="Split Clip at Playhead"
           >
             <Scissors className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden sm:inline">Split</span>
+            <span>Split</span>
           </button>
 
           {/* Duplicate */}
@@ -219,7 +219,7 @@ export const Timeline: React.FC = () => {
             type="button"
             disabled={!selectedClip}
             onClick={() => selectedClip && duplicateClip(selectedClip.id)}
-            className="p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-[#23293a] border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-white flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            className="p-1 sm:p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-[#23293a] border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-white flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold cursor-pointer"
             title="Duplicate Clip"
           >
             <Copy className="w-3.5 h-3.5 text-slate-400" />
@@ -231,7 +231,7 @@ export const Timeline: React.FC = () => {
             type="button"
             disabled={!selectedClip}
             onClick={() => selectedClip && deleteClip(selectedClip.id)}
-            className="p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-red-950/40 border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-red-400 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            className="p-1 sm:p-1.5 px-2 rounded-lg bg-[#181c28] hover:bg-red-950/40 border border-[#2b3346] disabled:opacity-30 text-slate-300 hover:text-red-400 flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold cursor-pointer"
             title="Delete Clip"
           >
             <Trash2 className="w-3.5 h-3.5 text-red-400" />
@@ -242,7 +242,7 @@ export const Timeline: React.FC = () => {
           <button
             type="button"
             onClick={() => setSnapEnabled(!snapEnabled)}
-            className={`p-1.5 px-2 rounded-lg border text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+            className={`p-1 sm:p-1.5 px-2 rounded-lg border text-[10px] sm:text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
               snapEnabled
                 ? 'bg-blue-600/20 border-blue-500/40 text-blue-400'
                 : 'bg-[#181c28] border-[#2b3346] text-slate-400'
@@ -255,7 +255,7 @@ export const Timeline: React.FC = () => {
         </div>
 
         {/* Zoom Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => setTimelineZoom(Math.max(30, timelineZoom - 20))}
@@ -271,7 +271,7 @@ export const Timeline: React.FC = () => {
             max="250"
             value={timelineZoom}
             onChange={(e) => setTimelineZoom(parseInt(e.target.value, 10))}
-            className="w-20 sm:w-28 accent-blue-600 h-1"
+            className="hidden sm:block w-20 sm:w-28 accent-blue-600 h-1"
           />
 
           <button
@@ -453,15 +453,15 @@ export const Timeline: React.FC = () => {
                   })}
                 </div>
               ))}
+            </div>
 
-              {/* 3. Global Red Playhead Needle */}
-              <div
-                style={{ left: currentTime * timelineZoom }}
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-20"
-              >
-                {/* Playhead Scrubber Top Crown */}
-                <div className="w-3 h-3 bg-red-500 rounded-b -translate-x-[5px] shadow-md pointer-events-none" />
-              </div>
+            {/* 3. Global Red Playhead Needle (Spans from ruler top through all 10 tracks) */}
+            <div
+              style={{ left: currentTime * timelineZoom }}
+              className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-30 shadow-[0_0_8px_rgba(239,68,68,0.9)]"
+            >
+              {/* Playhead Scrubber Top Diamond Cap */}
+              <div className="w-3.5 h-3.5 bg-red-500 rotate-45 -translate-x-[6px] -translate-y-1 shadow-md pointer-events-none border border-white/80" />
             </div>
           </div>
         </div>

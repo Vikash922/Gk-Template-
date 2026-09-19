@@ -103,9 +103,15 @@ export const LeftToolbar: React.FC = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const fileList: File[] = Array.from(files);
+    for (const file of fileList) {
       try {
+        // Prevent duplicates by checking if file with same name and size is already present
+        const alreadyExists = mediaAssets.some(
+          (a) => a.name === file.name && a.fileSize === file.size
+        );
+        if (alreadyExists) continue;
+
         const dataUrl = await readFileAsDataUrl(file);
         let type: 'image' | 'video' | 'audio' = 'image';
         if (file.type.startsWith('video/')) type = 'video';
@@ -121,7 +127,10 @@ export const LeftToolbar: React.FC = () => {
         };
 
         await projectStore.saveMediaAsset(newAsset);
-        setMediaAssets((prev) => [newAsset, ...prev]);
+        setMediaAssets((prev) => {
+          if (prev.some((a) => a.name === file.name && a.fileSize === file.size)) return prev;
+          return [newAsset, ...prev];
+        });
       } catch (err) {
         console.error('Failed to import file:', err);
       }
@@ -133,6 +142,13 @@ export const LeftToolbar: React.FC = () => {
     e.stopPropagation();
     await projectStore.deleteMediaAsset(id);
     setMediaAssets((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleClearAllMedia = async () => {
+    if (window.confirm('Delete all imported media files from bin?')) {
+      await projectStore.clearAllMediaAssets();
+      setMediaAssets([]);
+    }
   };
 
   const addAssetToTimeline = (asset: MediaAsset) => {
@@ -408,9 +424,16 @@ export const LeftToolbar: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 pb-1">
                     <span>Imported Media ({mediaAssets.length})</span>
-                    <span>Click "+" to add</span>
+                    <button
+                      type="button"
+                      onClick={handleClearAllMedia}
+                      className="text-red-400 hover:text-red-300 hover:underline font-bold cursor-pointer transition-colors"
+                      title="Delete all media from storage"
+                    >
+                      Clear All
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
@@ -448,7 +471,7 @@ export const LeftToolbar: React.FC = () => {
                           </div>
 
                           {/* Actions */}
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <button
                               type="button"
                               onClick={() => addAssetToTimeline(asset)}
@@ -460,7 +483,7 @@ export const LeftToolbar: React.FC = () => {
                             <button
                               type="button"
                               onClick={(e) => handleDeleteMediaAsset(asset.id, e)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                              className="p-1.5 rounded-lg text-red-400 hover:text-white hover:bg-red-600/30 bg-red-500/10 sm:bg-transparent border border-red-500/20 sm:border-transparent sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-all cursor-pointer"
                               title="Delete from bin"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

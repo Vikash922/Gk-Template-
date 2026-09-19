@@ -14,6 +14,7 @@ import {
   Upload,
   RotateCcw,
   Sliders,
+  Film,
 } from 'lucide-react';
 
 interface CardPreviewProps {
@@ -23,6 +24,7 @@ interface CardPreviewProps {
   onDuplicate?: () => void;
   onUpdateDesign?: (updated: CardDesignConfig) => void;
   onOpenPositionControls?: () => void;
+  onOpenInVideoEditor?: (question: GKQuestion) => void;
 }
 
 export const CardPreview: React.FC<CardPreviewProps> = ({
@@ -32,6 +34,7 @@ export const CardPreview: React.FC<CardPreviewProps> = ({
   onDuplicate,
   onUpdateDesign,
   onOpenPositionControls,
+  onOpenInVideoEditor,
 }) => {
   const { showToast } = useToast();
   const [resolution, setResolution] = useState<'1920x1080' | '1280x720'>('1920x1080');
@@ -213,6 +216,18 @@ export const CardPreview: React.FC<CardPreviewProps> = ({
             </>
           )}
         </button>
+
+        {onOpenInVideoEditor && (
+          <button
+            type="button"
+            onClick={() => onOpenInVideoEditor(question)}
+            className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold text-xs shadow-xs hover:shadow transition-all active:scale-[0.98] cursor-pointer"
+            title="Open this card in the 16:9 Video Studio"
+          >
+            <Film className="w-4 h-4 text-violet-200" />
+            <span>🎬 Open in Video Studio (16:9)</span>
+          </button>
+        )}
 
         <div className="flex items-center gap-2">
           {onDuplicate && (

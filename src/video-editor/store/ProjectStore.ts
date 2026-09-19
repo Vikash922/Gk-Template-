@@ -181,6 +181,21 @@ class ProjectStore {
     }
   }
 
+  async clearAllMediaAssets(): Promise<void> {
+    try {
+      const db = await this.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('media_assets', 'readwrite');
+        const store = tx.objectStore('media_assets');
+        const req = store.clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.warn('Could not clear media assets:', e);
+    }
+  }
+
   // ─── Template Operations ───
   async saveTemplate(template: VideoTemplate): Promise<void> {
     try {

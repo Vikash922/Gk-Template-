@@ -374,7 +374,33 @@ export class PreviewEngine {
       renderSource = applyChromaKey(img, imgData.chromaKey, imgData.src);
     }
 
-    ctx.drawImage(renderSource, -w / 2, -h / 2, w, h);
+    // Compute aspect-ratio preserved rendering (prevents image distortion / weird stretching)
+    const naturalW = (img as HTMLImageElement).naturalWidth || (renderSource as any).width || w;
+    const naturalH = (img as HTMLImageElement).naturalHeight || (renderSource as any).height || h;
+    const imgAspect = naturalW / (naturalH || 1);
+    const boxAspect = w / (h || 1);
+
+    let renderW = w;
+    let renderH = h;
+    if (imgData.fit === 'cover') {
+      if (imgAspect > boxAspect) {
+        renderW = h * imgAspect;
+      } else {
+        renderH = w / imgAspect;
+      }
+    } else if (imgData.fit === 'fill') {
+      renderW = w;
+      renderH = h;
+    } else {
+      // Default: contain (maintain pristine aspect ratio without distortion)
+      if (imgAspect > boxAspect) {
+        renderH = w / imgAspect;
+      } else {
+        renderW = h * imgAspect;
+      }
+    }
+
+    ctx.drawImage(renderSource, -renderW / 2, -renderH / 2, renderW, renderH);
 
     // Border
     if (imgData.borderColor && (imgData.borderWidth ?? 0) > 0) {

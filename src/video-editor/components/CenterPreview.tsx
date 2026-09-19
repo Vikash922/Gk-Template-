@@ -10,6 +10,9 @@ import {
   Eye,
   SkipBack,
   SkipForward,
+  Scissors,
+  Copy,
+  Trash2,
 } from 'lucide-react';
 
 export const CenterPreview: React.FC = () => {
@@ -23,6 +26,9 @@ export const CenterPreview: React.FC = () => {
     selectClip,
     selectedClip,
     updateClip,
+    splitClipAtPlayhead,
+    duplicateClip,
+    deleteClip,
   } = useEditor();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -245,30 +251,30 @@ export const CenterPreview: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col bg-[#0a0c12] min-h-0 relative select-none overflow-hidden">
       {/* ── Top Monitor Sub-Bar ── */}
-      <div className="h-9 bg-[#11131a] border-b border-[#1f2433] px-4 flex items-center justify-between text-xs text-slate-400 shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-slate-300">Canvas Monitor</span>
+      <div className="h-8 sm:h-9 bg-[#11131a] border-b border-[#1f2433] px-2 sm:px-4 flex items-center justify-between text-xs text-slate-400 shrink-0 select-none">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-slate-300 text-[11px] sm:text-xs">Preview</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
             {project.width}x{project.height}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Safe Guides Toggle */}
           <button
             type="button"
             onClick={() => setShowSafeGuides(!showSafeGuides)}
-            className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+            className={`px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer text-[10px] sm:text-[11px] ${
               showSafeGuides ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-slate-500 hover:text-white'
             }`}
-            title="Toggle Safe Area (9:16 Shorts/Reels guidelines)"
+            title="Toggle Safe Area Guides"
           >
             <Shield className="w-3 h-3" />
             <span>Safe Area</span>
           </button>
 
-          {/* Zoom Toggle */}
-          <div className="flex items-center gap-1 bg-[#181c28] rounded-md p-0.5 text-[10px]">
+          {/* Zoom Toggle (Desktop) */}
+          <div className="hidden sm:flex items-center gap-1 bg-[#181c28] rounded-md p-0.5 text-[10px]">
             {(['fit', 0.5, 0.75, 1.0] as const).map((z) => (
               <button
                 key={String(z)}
@@ -286,7 +292,48 @@ export const CenterPreview: React.FC = () => {
       </div>
 
       {/* ── Central Canvas Stage ── */}
-      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+      <div className="flex-1 flex items-center justify-center p-1 sm:p-4 overflow-hidden relative">
+        {/* Floating CapCut/VN Style Quick Action Toolbar when Clip is Selected */}
+        {selectedClip && (
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 bg-[#121522]/95 backdrop-blur-md border border-[#2b334a] px-2 py-1.5 rounded-2xl shadow-2xl text-xs font-semibold select-none animate-in fade-in duration-150 max-w-[95vw] overflow-x-auto">
+            <span className="px-2 py-0.5 rounded-md bg-blue-950/80 border border-blue-500/30 text-blue-300 text-[10px] font-bold truncate max-w-[100px] sm:max-w-[140px]">
+              {selectedClip.name}
+            </span>
+
+            <div className="h-4 w-px bg-slate-700 mx-0.5 shrink-0" />
+
+            <button
+              type="button"
+              onClick={() => splitClipAtPlayhead(selectedClip.id)}
+              className="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors text-[10px] sm:text-[11px] shrink-0"
+              title="Split clip at playhead"
+            >
+              <Scissors className="w-3 h-3 text-blue-400" />
+              <span>Split</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => duplicateClip(selectedClip.id)}
+              className="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors text-[10px] sm:text-[11px] shrink-0"
+              title="Duplicate clip"
+            >
+              <Copy className="w-3 h-3 text-slate-400" />
+              <span>Copy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => deleteClip(selectedClip.id)}
+              className="px-2 py-1 rounded-lg hover:bg-red-950/50 text-slate-400 hover:text-red-400 flex items-center gap-1 cursor-pointer transition-colors text-[10px] sm:text-[11px] shrink-0"
+              title="Delete clip"
+            >
+              <Trash2 className="w-3 h-3 text-red-400" />
+              <span>Delete</span>
+            </button>
+          </div>
+        )}
+
         <div
           className={`relative rounded-xl shadow-2xl overflow-hidden border border-[#2d3448] flex items-center justify-center bg-black ${
             project.aspectRatio === '9:16'
@@ -312,31 +359,51 @@ export const CenterPreview: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Bottom Floating Transport Bar ── */}
-      <div className="h-12 bg-[#11131a] border-t border-[#1e2230] px-4 flex items-center justify-between shrink-0 text-xs text-slate-300">
-        <div className="flex items-center gap-2">
-          {/* Step Back 1s */}
+      {/* ── Bottom Floating Transport Bar (VN/CapCut Style) ── */}
+      <div className="h-11 sm:h-12 bg-[#11131a] border-t border-[#1e2230] px-2 sm:px-4 flex items-center justify-between shrink-0 text-xs text-slate-300 select-none">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Rewind to Start */}
           <button
             type="button"
-            onClick={() => setCurrentTime(Math.max(0, currentTime - 1))}
+            onClick={() => setCurrentTime(0)}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Step backward 1s"
+            title="Jump to Start"
           >
-            <SkipBack className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Step Back 1 Frame (-1f) */}
+          <button
+            type="button"
+            onClick={() => setCurrentTime(Math.max(0, currentTime - 1 / (project.fps || 30)))}
+            className="px-1.5 py-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer text-[10px] font-mono"
+            title="Step back 1 frame (1/30s)"
+          >
+            -1f
           </button>
 
           {/* Play / Pause */}
           <button
             type="button"
             onClick={togglePlayPause}
-            className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
             title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
           >
             {isPlaying ? (
-              <Pause className="w-4 h-4 fill-white" />
+              <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white" />
             ) : (
-              <Play className="w-4 h-4 fill-white ml-0.5" />
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white ml-0.5" />
             )}
+          </button>
+
+          {/* Step Forward 1 Frame (+1f) */}
+          <button
+            type="button"
+            onClick={() => setCurrentTime(Math.min(project.duration, currentTime + 1 / (project.fps || 30)))}
+            className="px-1.5 py-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer text-[10px] font-mono"
+            title="Step forward 1 frame (1/30s)"
+          >
+            +1f
           </button>
 
           {/* Step Forward 1s */}
@@ -346,22 +413,12 @@ export const CenterPreview: React.FC = () => {
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
             title="Step forward 1s"
           >
-            <SkipForward className="w-4 h-4" />
-          </button>
-
-          {/* Rewind to Start */}
-          <button
-            type="button"
-            onClick={() => setCurrentTime(0)}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer ml-1"
-            title="Jump to Start"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
 
         {/* Timecode */}
-        <div className="font-mono text-xs font-semibold">
+        <div className="font-mono text-[11px] sm:text-xs font-semibold">
           <span className="text-blue-400 font-bold">{formatTime(currentTime)}</span>
           <span className="text-slate-500 mx-1">/</span>
           <span className="text-slate-400">{formatTime(project.duration)}</span>

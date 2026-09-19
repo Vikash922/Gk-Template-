@@ -120,6 +120,7 @@ export interface ImageElement {
   shadowColor?: string;
   chromaKey?: ChromaKeyConfig;
   blendMode?: string;
+  fit?: 'contain' | 'cover' | 'fill';
 }
 
 export type SfxType =

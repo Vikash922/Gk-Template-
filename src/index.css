@@ -2,26 +2,25 @@
 
 @layer base {
   :root {
-    --background: #090d16;
-    --surface: rgba(15, 23, 42, 0.75);
-    --surface-border: rgba(255, 255, 255, 0.08);
-    --text: #f8fafc;
+    --bg-main: #0e0e11;
+    --bg-surface: #18181c;
+    --bg-surface-elevated: #222228;
+    --bg-surface-active: #2c2c35;
+    --border-subtle: #26262e;
+    --border-focus: #3b82f6;
+    --text-main: #ffffff;
     --text-muted: #94a3b8;
-    --primary: #10b981;
-    --primary-glow: rgba(16, 185, 129, 0.25);
-    --accent: #6366f1;
+    --accent: #00f0ff;
+    --accent-blue: #3b82f6;
+    --accent-green: #22c55e;
   }
 
   body {
-    background-color: #0b0f19;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.10) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(244, 63, 94, 0.08) 0px, transparent 50%);
-    background-attachment: fixed;
-    color: var(--text);
+    background-color: #0c0c0f;
+    color: #f8fafc;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
 }
 
@@ -29,84 +28,67 @@
   font-family: 'Noto Sans Devanagari', 'Plus Jakarta Sans', sans-serif;
 }
 
-/* ─── Glassmorphism Design System (Design Division) ─── */
-.glass-panel {
-  background: rgba(18, 24, 38, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+/* ─── CapCut / VN Studio Fast UI Tokens (No heavy blur = 0 Lag) ─── */
+.capcut-panel {
+  background-color: #141418;
+  border: 1px solid #23232a;
 }
 
-.glass-card {
-  background: rgba(23, 32, 51, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.capcut-card {
+  background-color: #1a1a20;
+  border: 1px solid #282832;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.glass-card:hover {
-  background: rgba(30, 41, 67, 0.75);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.45);
+.capcut-card:hover {
+  background-color: #21212a;
+  border-color: #3b3b48;
 }
 
-.glass-input {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f8fafc;
-  transition: all 0.15s ease;
+.capcut-input {
+  background-color: #121216;
+  border: 1px solid #262630;
+  color: #ffffff;
+  transition: border-color 0.15s ease;
 }
 
-.glass-input:focus {
-  background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(99, 102, 241, 0.6);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+.capcut-input:focus {
+  border-color: #3b82f6;
+  outline: none;
 }
 
-.glass-pill {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Multi-track Timeline styles */
+.timeline-track {
+  background-color: #111115;
+  border-top: 1px solid #202028;
+  border-bottom: 1px solid #202028;
 }
 
-.glass-pill-active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.3);
+.timeline-clip {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
 }
 
-/* Light Card Container for Canvas & Preview elements */
-.light-canvas-container {
-  background: #f8fafc;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+.timeline-clip.active {
+  border: 2px solid #00f0ff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
 }
 
-/* Smooth custom scrollbars */
+/* Custom crisp scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.3);
+  background: #0e0e12;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: #2a2a35;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: #3f3f50;
 }

@@ -9,6 +9,7 @@ import {
   LayoutTemplate,
   Wand2,
   Image as ImageIcon,
+  Video,
 } from 'lucide-react';
 
 export type AppTab = 'home' | 'editor' | 'batch' | 'templates' | 'settings' | 'video';
@@ -29,48 +30,38 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAiImageStudio,
 }) => {
   const tabs = [
+    { id: 'video' as AppTab, label: 'Video Studio', icon: Video, highlight: true },
     { id: 'home' as AppTab, label: 'Dashboard', icon: Home },
-    { id: 'editor' as AppTab, label: 'Single Studio', icon: Sparkles },
-    { id: 'batch' as AppTab, label: 'Batch Studio', icon: Layers },
-    { id: 'video' as AppTab, label: 'Video Studio', icon: Film, badge: 'Shorts' },
+    { id: 'editor' as AppTab, label: 'Single Card', icon: Sparkles },
+    { id: 'batch' as AppTab, label: 'Batch Cards', icon: Layers },
     { id: 'templates' as AppTab, label: 'Templates', icon: LayoutTemplate },
     { id: 'settings' as AppTab, label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
     <>
-      {/* ─── Top Luxury Floating Header ─── */}
-      <header className="sticky top-0 z-40 bg-slate-950/70 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Logo & Brand Identity */}
+      {/* ─── CapCut / VN Style Top Navigation Bar (High Performance, 0 Lag) ─── */}
+      <header className="sticky top-0 z-40 bg-[#121216] border-b border-[#22222a]">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+          {/* Brand Logo */}
           <div
             onClick={() => onChangeTab('home')}
-            className="flex items-center gap-3 cursor-pointer select-none group"
+            className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
-            <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-indigo-500 p-0.5 shadow-md shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all duration-300">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                </div>
-              </div>
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20">
+              <Video className="w-4 h-4 text-white" />
             </div>
 
-            <div>
-              <span className="text-base font-black text-white tracking-tight flex items-center gap-1.5">
-                GK Card Studio
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  PRO
-                </span>
+            <span className="text-sm font-black text-white tracking-tight flex items-center gap-1.5">
+              GK Studio
+              <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                PRO
               </span>
-            </div>
+            </span>
           </div>
 
-          {/* Desktop Navigation Segmented Pill Bar */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+          {/* Center Tabs (CapCut / VN Segmented Bar) */}
+          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#181820] border border-[#262632]">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = currentTab === tab.id;
@@ -79,54 +70,41 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={tab.id}
                   type="button"
                   onClick={() => onChangeTab(tab.id)}
-                  className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-gradient-to-r from-emerald-500/90 to-teal-600/90 text-white shadow-md shadow-emerald-500/20'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                      ? tab.highlight
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm'
+                        : 'bg-[#2a2a38] text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-[#20202a]'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                   <span>{tab.label}</span>
-                  {tab.badge && (
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded-full bg-rose-500 text-white shadow-xs">
-                      {tab.badge}
-                    </span>
+                  {tab.highlight && !isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Action CTAs & Quick AI Tools */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2">
             {onOpenAiQuestions && (
               <button
                 type="button"
                 onClick={onOpenAiQuestions}
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                title="AI Questions Generator"
+                className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1a1a24] hover:bg-[#242432] border border-[#2d2d3e] text-purple-400 text-xs font-bold transition-colors cursor-pointer"
               >
-                <Wand2 className="w-3.5 h-3.5 text-purple-400" />
-                <span>AI Generator</span>
-              </button>
-            )}
-
-            {onOpenAiImageStudio && (
-              <button
-                type="button"
-                onClick={onOpenAiImageStudio}
-                className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                title="AI Image Studio"
-              >
-                <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
-                <span>AI Images</span>
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>AI Prompt</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={onNewQuestion}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold shadow-md shadow-cyan-500/20 transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
               <span>New Card</span>
@@ -135,9 +113,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* ─── Mobile Bottom Floating Glass Dock ─── */}
+      {/* ─── Mobile Bottom Navigation Dock ─── */}
       <nav
-        className="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-slate-950/85 backdrop-blur-2xl border border-white/[0.12] rounded-2xl p-1.5 flex items-center justify-around shadow-2xl shadow-black/80 select-none"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#121216] border-t border-[#22222a] px-1 py-1 flex items-center justify-around select-none"
         aria-label="Mobile Navigation"
       >
         {tabs.slice(0, 5).map((tab) => {
@@ -148,17 +126,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               key={tab.id}
               type="button"
               onClick={() => onChangeTab(tab.id)}
-              className={`relative flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-white/[0.12] text-emerald-400 font-bold shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+              className={`flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 rounded-lg transition-colors ${
+                isActive ? 'text-cyan-400 font-bold bg-[#1e1e28]' : 'text-slate-400'
               }`}
             >
               <Icon className="w-4 h-4" />
-              <span className="text-[10px] font-medium leading-none">{tab.label.split(' ')[0]}</span>
-              {tab.badge && !isActive && (
-                <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500" />
-              )}
+              <span className="text-[10px]">{tab.label.split(' ')[0]}</span>
             </button>
           );
         })}

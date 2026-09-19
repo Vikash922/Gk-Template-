@@ -19,7 +19,7 @@ interface ExportModalProps {
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => {
   const { project } = useEditor();
 
-  const [resolution, setResolution] = useState<'1080p' | '720p'>('1080p');
+  const [resolution, setResolution] = useState<'4k' | '1080p' | '720p'>('1080p');
   const [fps, setFps] = useState<30 | 60>(30);
   const [format, setFormat] = useState<'webm' | 'mp4'>('webm');
 
@@ -192,36 +192,66 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
 
               {/* Resolution */}
               <div>
-                <label className="text-[11px] font-bold text-slate-300 block mb-1.5">Resolution</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="text-[11px] font-bold text-slate-300 block mb-1.5 flex items-center justify-between">
+                  <span>Output Resolution</span>
+                  <span className="text-[10px] text-blue-400 font-normal">Canvas: {project.width}x{project.height} ({project.aspectRatio})</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setResolution('4k')}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      resolution === '4k'
+                        ? 'bg-blue-600/25 border-blue-500 text-white shadow-lg shadow-blue-500/10'
+                        : 'bg-[#181c28] border-[#293044] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold block text-xs text-white">4K UHD</span>
+                      <span className="px-1.5 py-0.5 rounded text-[8px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">PRO</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      {project.aspectRatio === '9:16' ? '2160x3840' : '3840x2160'}
+                    </span>
+                    <span className="text-[9px] text-slate-500 block">Studio Master</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setResolution('1080p')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       resolution === '1080p'
-                        ? 'bg-blue-600/20 border-blue-500 text-white'
-                        : 'bg-[#181c28] border-[#293044] text-slate-400'
+                        ? 'bg-blue-600/25 border-blue-500 text-white shadow-lg shadow-blue-500/10'
+                        : 'bg-[#181c28] border-[#293044] text-slate-400 hover:text-white'
                     }`}
                   >
-                    <span className="font-bold block text-xs">1080p (Full HD)</span>
-                    <span className="text-[10px] text-slate-400">
-                      {project.aspectRatio === '9:16' ? '1080x1920 (Crisp Shorts)' : '1920x1080'}
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold block text-xs text-white">1080p</span>
+                      <span className="px-1.5 py-0.5 rounded text-[8px] bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">REC</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      {project.aspectRatio === '9:16' ? '1080x1920' : '1920x1080'}
                     </span>
+                    <span className="text-[9px] text-slate-500 block">YouTube / Reels</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setResolution('720p')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       resolution === '720p'
-                        ? 'bg-blue-600/20 border-blue-500 text-white'
-                        : 'bg-[#181c28] border-[#293044] text-slate-400'
+                        ? 'bg-blue-600/25 border-blue-500 text-white shadow-lg shadow-blue-500/10'
+                        : 'bg-[#181c28] border-[#293044] text-slate-400 hover:text-white'
                     }`}
                   >
-                    <span className="font-bold block text-xs">720p (Fast Render)</span>
-                    <span className="text-[10px] text-slate-400">
-                      {project.aspectRatio === '9:16' ? '720x1280 (Lightweight)' : '1280x720'}
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold block text-xs text-white">720p</span>
+                      <span className="px-1.5 py-0.5 rounded text-[8px] bg-slate-700 text-slate-300 font-semibold">FAST</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      {project.aspectRatio === '9:16' ? '720x1280' : '1280x720'}
                     </span>
+                    <span className="text-[9px] text-slate-500 block">Quick Share</span>
                   </button>
                 </div>
               </div>

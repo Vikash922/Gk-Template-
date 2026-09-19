@@ -2,7 +2,7 @@ import { VideoProject } from '../types';
 import { PreviewEngine } from './PreviewEngine';
 
 export interface ExportOptions {
-  resolution: '1080p' | '720p';
+  resolution: '4k' | '1080p' | '720p';
   fps: 30 | 60;
   format: 'webm' | 'mp4';
 }
@@ -36,7 +36,10 @@ export class ExportEngine {
     let targetW = 1080;
     let targetH = 1920;
 
-    if (options.resolution === '720p') {
+    if (options.resolution === '4k') {
+      targetW = isPortrait ? 2160 : 3840;
+      targetH = isPortrait ? 3840 : 2160;
+    } else if (options.resolution === '720p') {
       targetW = isPortrait ? 720 : 1280;
       targetH = isPortrait ? 1280 : 720;
     } else {
@@ -86,10 +89,17 @@ export class ExportEngine {
       }
     }
 
+    const bitrate =
+      options.resolution === '4k'
+        ? (options.fps === 60 ? 40_000_000 : 30_000_000)
+        : options.resolution === '1080p'
+        ? (options.fps === 60 ? 14_000_000 : 8_000_000)
+        : 4_000_000;
+
     const recordedChunks: Blob[] = [];
     this.recorder = new MediaRecorder(outputStream, {
       mimeType,
-      videoBitsPerSecond: options.resolution === '1080p' ? 8_000_000 : 4_000_000,
+      videoBitsPerSecond: bitrate,
     });
 
     this.recorder.ondataavailable = (e) => {

@@ -12,6 +12,7 @@ import {
   evaluateDynamicEffects,
   renderPostEffects,
 } from './EffectEngine';
+import { applyChromaKey } from './ChromaKey';
 
 // Image Cache to ensure 60fps rendering without re-fetching
 const imageCache = new Map<string, HTMLImageElement>();
@@ -135,7 +136,7 @@ export class PreviewEngine {
 
         // Render clip content
         if (clip.type === 'text' && clip.text) {
-          this.renderTextClip(ctx, clip, clipRelativeTime);
+          this.renderTextClip(ctx, clip, clipRelativeTime, currentTime);
         } else if ((clip.type === 'image' || clip.type === 'sticker') && clip.image) {
           this.renderImageClip(ctx, clip);
         } else if (clip.gkRole === 'timer') {
@@ -163,7 +164,12 @@ export class PreviewEngine {
     }
   }
 
-  private renderTextClip(ctx: CanvasRenderingContext2D, clip: Clip, clipRelativeTime: number) {
+  private renderTextClip(
+    ctx: CanvasRenderingContext2D,
+    clip: Clip,
+    clipRelativeTime: number,
+    currentTime: number = 0
+  ) {
     const text = clip.text!;
     let content = text.content || '';
 
@@ -179,6 +185,7 @@ export class PreviewEngine {
         case 'typewriter': {
           const charCount = Math.floor(content.length * p);
           content = content.substring(0, charCount);
+          if (p < 0.98) content += '▏';
           break;
         }
         case 'pop':
@@ -198,6 +205,13 @@ export class PreviewEngine {
         case 'fade':
           animAlpha = p;
           break;
+        case 'flip':
+          animScale = Math.abs(Math.cos(p * Math.PI * 2));
+          animAlpha = p;
+          break;
+        case 'shake':
+          animOffsetY = (Math.random() - 0.5) * 12;
+          break;
         default:
           break;
       }
@@ -207,6 +221,12 @@ export class PreviewEngine {
     ctx.globalAlpha *= animAlpha;
     if (animScale !== 1) ctx.scale(animScale, animScale);
     if (animOffsetY !== 0) ctx.translate(0, animOffsetY);
+
+    if (text.inAnimation === 'glowPulse') {
+      const pulse = (Math.sin(clipRelativeTime * 6) + 1) * 8;
+      ctx.shadowColor = text.color || '#38bdf8';
+      ctx.shadowBlur = (text.shadowBlur || 10) + pulse;
+    }
 
     // Font setting
     const weight = text.fontWeight || '700';
@@ -220,8 +240,27 @@ export class PreviewEngine {
     const lineHeight = size * (text.lineSpacing || 1.3);
     const totalHeight = lines.length * lineHeight;
 
-    // Draw background box if present
-    if (text.backgroundColor) {
+    // Draw background box if present or if answer highlight
+    const isAnswer =
+      Boolean(clip.isAnswerHighlight) ||
+      Boolean(
+        clip.isCorrectOption &&
+        clip.revealStart !== undefined &&
+        currentTime >= clip.revealStart
+      );
+
+    const isDashed =
+      Boolean(clip.activeDashed) ||
+      Boolean(
+        clip.dashedActiveStart !== undefined &&
+        clip.dashedActiveEnd !== undefined &&
+        currentTime >= clip.dashedActiveStart &&
+        currentTime < clip.dashedActiveEnd
+      );
+
+    const hasBg = text.backgroundColor || isAnswer;
+
+    if (hasBg) {
       const pad = text.backgroundPadding || 20;
       const radius = text.backgroundRadius || 16;
       let maxLineWidth = 0;
@@ -229,14 +268,30 @@ export class PreviewEngine {
         maxLineWidth = Math.max(maxLineWidth, ctx.measureText(l).width);
       });
 
-      const boxW = maxLineWidth + pad * 2;
-      const boxH = totalHeight + pad * 2;
+      const boxW = Math.max(clip.width, maxLineWidth + pad * 2);
+      const boxH = Math.max(clip.height, totalHeight + pad * 2);
 
       ctx.beginPath();
       const r = Math.min(radius, boxW / 2, boxH / 2);
       ctx.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, r);
-      ctx.fillStyle = text.backgroundColor;
+      ctx.fillStyle = isAnswer ? '#059669' : text.backgroundColor!;
       ctx.fill();
+
+      if (isAnswer) {
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+      }
+
+      // Red dashed border highlight (Reference video style: A, B, C, D sequential highlight)
+      if (isDashed && !isAnswer) {
+        ctx.save();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([16, 8]);
+        ctx.strokeRect(-boxW / 2 - 4, -boxH / 2 - 4, boxW + 8, boxH + 8);
+        ctx.restore();
+      }
     }
 
     // Shadow
@@ -308,7 +363,18 @@ export class PreviewEngine {
       ctx.shadowBlur = imgData.shadowBlur || 14;
     }
 
-    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    // Blend Mode
+    if (imgData.blendMode) {
+      ctx.globalCompositeOperation = imgData.blendMode as GlobalCompositeOperation;
+    }
+
+    // Chroma Key support
+    let renderSource: CanvasImageSource = img;
+    if (imgData.chromaKey?.enabled) {
+      renderSource = applyChromaKey(img, imgData.chromaKey, imgData.src);
+    }
+
+    ctx.drawImage(renderSource, -w / 2, -h / 2, w, h);
 
     // Border
     if (imgData.borderColor && (imgData.borderWidth ?? 0) > 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useEditor } from '../store/EditorContext';
 import {
   Film,
@@ -14,11 +14,19 @@ import {
   Upload,
   Clock,
   Volume2,
+  Trash2,
+  Play,
+  Filter,
+  FolderOpen,
+  Video as VideoIcon,
+  CheckCircle,
 } from 'lucide-react';
-import { Clip, TrackType, EffectType, TransitionType } from '../types';
+import { Clip, TrackType, EffectType, TransitionType, MediaAsset, SfxType } from '../types';
 import { BUILTIN_TEMPLATES, applyTemplateToProject } from '../engine/TemplateEngine';
 import { readFileAsDataUrl } from '../../utils/image';
 import { findCuratedAssetByQuery } from '../../constants/curatedImages';
+import { projectStore } from '../store/ProjectStore';
+import { playSfx } from '../engine/SoundFX';
 
 export type LeftTab =
   | 'media'
@@ -41,9 +49,22 @@ export const LeftToolbar: React.FC = () => {
     updateProject,
   } = useEditor();
 
-  const [activeTab, setActiveTab] = useState<LeftTab>('text');
+  const [activeTab, setActiveTab] = useState<LeftTab>('gk');
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'image' | 'video' | 'audio'>('all');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    projectStore.getAllMediaAssets().then((assets) => {
+      if (assets && assets.length > 0) {
+        setMediaAssets(assets);
+      }
+    });
+  }, []);
 
   // Helper to add a clip at current playhead
   const createAndAddClip = (
@@ -76,6 +97,70 @@ export const LeftToolbar: React.FC = () => {
     };
 
     addClipToTrack(trackId, newClip);
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        let type: 'image' | 'video' | 'audio' = 'image';
+        if (file.type.startsWith('video/')) type = 'video';
+        else if (file.type.startsWith('audio/')) type = 'audio';
+
+        const newAsset: MediaAsset = {
+          id: `asset_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          name: file.name,
+          type,
+          dataUrl,
+          fileSize: file.size,
+          createdAt: Date.now(),
+        };
+
+        await projectStore.saveMediaAsset(newAsset);
+        setMediaAssets((prev) => [newAsset, ...prev]);
+      } catch (err) {
+        console.error('Failed to import file:', err);
+      }
+    }
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+  };
+
+  const handleDeleteMediaAsset = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await projectStore.deleteMediaAsset(id);
+    setMediaAssets((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const addAssetToTimeline = (asset: MediaAsset) => {
+    if (asset.type === 'image') {
+      createAndAddClip('image', 'track_image', asset.name, 4, {
+        height: Math.round(project.height * 0.35),
+        image: {
+          src: asset.dataUrl,
+          mask: 'rounded',
+          borderRadius: 16,
+        },
+      });
+    } else if (asset.type === 'video') {
+      createAndAddClip('video', 'track_video', asset.name, 6, {
+        video: {
+          src: asset.dataUrl,
+          volume: 1.0,
+          speed: 1.0,
+        },
+      });
+    } else if (asset.type === 'audio') {
+      createAndAddClip('audio', 'track_sfx', asset.name, 5, {
+        audio: {
+          src: asset.dataUrl,
+          volume: 1.0,
+        },
+      });
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,14 +196,14 @@ export const LeftToolbar: React.FC = () => {
 
   const navItems = [
     { id: 'gk' as LeftTab, label: 'GK Tools', icon: HelpCircle },
+    { id: 'media' as LeftTab, label: 'Media Bin', icon: Film },
     { id: 'text' as LeftTab, label: 'Text', icon: Type },
     { id: 'image' as LeftTab, label: 'Images', icon: ImageIcon },
-    { id: 'audio' as LeftTab, label: 'Audio', icon: Music },
+    { id: 'audio' as LeftTab, label: 'Audio & SFX', icon: Music },
     { id: 'stickers' as LeftTab, label: 'Stickers', icon: Smile },
     { id: 'effects' as LeftTab, label: 'Effects', icon: Wand2 },
     { id: 'transitions' as LeftTab, label: 'Transitions', icon: Layers },
     { id: 'templates' as LeftTab, label: 'Templates', icon: Sparkles },
-    { id: 'media' as LeftTab, label: 'Media', icon: Film },
   ];
 
   return (
@@ -271,6 +356,124 @@ export const LeftToolbar: React.FC = () => {
             </div>
           )}
 
+          {/* ── TAB: MEDIA BIN (Device Gallery Import & Library) ── */}
+          {activeTab === 'media' && (
+            <div className="space-y-3">
+              <input
+                ref={galleryInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*,audio/*"
+                onChange={handleGalleryUpload}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-blue-500/20 active:scale-98"
+              >
+                <FolderOpen className="w-4 h-4" />
+                <span>Import from Gallery / Device</span>
+              </button>
+
+              {/* Filter Chips */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#161925] border border-[#23293c]">
+                {(['all', 'image', 'video', 'audio'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setMediaFilter(filter)}
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-semibold capitalize transition-colors cursor-pointer ${
+                      mediaFilter === filter
+                        ? 'bg-[#242b3e] text-blue-400 font-bold'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+
+              {/* Assets list */}
+              {mediaAssets.filter((a) => mediaFilter === 'all' || a.type === mediaFilter).length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-[#283146] text-center space-y-2 bg-[#141723]/50">
+                  <div className="w-10 h-10 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/20 flex items-center justify-center mx-auto">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <p className="text-[11px] font-semibold text-slate-300">Your Media Bin is empty</p>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Click above to import photos, videos, or music from your device storage or photo gallery to use anywhere in your video.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+                    <span>Imported Media ({mediaAssets.length})</span>
+                    <span>Click "+" to add</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    {mediaAssets
+                      .filter((a) => mediaFilter === 'all' || a.type === mediaFilter)
+                      .map((asset) => (
+                        <div
+                          key={asset.id}
+                          className="p-2 rounded-xl bg-[#181c28] hover:bg-[#202636] border border-[#283044] flex items-center gap-2.5 transition-all group"
+                        >
+                          {/* Thumbnail / Icon */}
+                          <div className="w-12 h-12 rounded-lg bg-black/40 border border-[#2b3348] shrink-0 overflow-hidden flex items-center justify-center relative">
+                            {asset.type === 'image' && (
+                              <img src={asset.dataUrl} alt={asset.name} className="w-full h-full object-cover" />
+                            )}
+                            {asset.type === 'video' && (
+                              <video src={asset.dataUrl} className="w-full h-full object-cover" />
+                            )}
+                            {asset.type === 'audio' && (
+                              <Music className="w-5 h-5 text-purple-400" />
+                            )}
+                            <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded text-[7px] font-bold uppercase bg-black/70 text-slate-200">
+                              {asset.type.substring(0, 3)}
+                            </span>
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white truncate text-[11px]" title={asset.name}>
+                              {asset.name}
+                            </p>
+                            <p className="text-[9px] text-slate-400">
+                              {asset.fileSize ? `${Math.round(asset.fileSize / 1024)} KB` : 'Local Media'}
+                            </p>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => addAssetToTimeline(asset)}
+                              className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 transition-all cursor-pointer"
+                              title="Add to Timeline at playhead"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteMediaAsset(asset.id, e)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                              title="Delete from bin"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── TAB: TEXT ── */}
           {activeTab === 'text' && (
             <div className="space-y-2.5">
@@ -386,45 +589,183 @@ export const LeftToolbar: React.FC = () => {
 
           {/* ── TAB: AUDIO & SFX ── */}
           {activeTab === 'audio' && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <input
+                ref={audioInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const dataUrl = await readFileAsDataUrl(file);
+                    createAndAddClip('audio', 'track_sfx', file.name, 6, {
+                      audio: { src: dataUrl, volume: 1.0 },
+                    });
+                  } catch (err) {
+                    console.error(err);
+                  }
+                  if (audioInputRef.current) audioInputRef.current.value = '';
+                }}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={() => audioInputRef.current?.click()}
+                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-500/20"
+              >
+                <Music className="w-4 h-4" />
+                <span>Upload Custom Audio / Music</span>
+              </button>
+
+              <div className="pt-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                  Interactive Sound FX Board:
+                </span>
+
+                <div className="space-y-2">
+                  {[
+                    { type: 'clockTick' as SfxType, label: 'Clock Tick (5s)', desc: 'Mechanical ticking loop', dur: 5 },
+                    { type: 'correctDing' as SfxType, label: 'Correct Bell Chime', desc: 'Double celebratory chime', dur: 1.5 },
+                    { type: 'timeoutBuzzer' as SfxType, label: 'Timeout Buzzer', desc: 'Game show buzzer sound', dur: 0.8 },
+                    { type: 'pop' as SfxType, label: 'Snappy Pop', desc: 'Snappy scale-up pop', dur: 0.2 },
+                    { type: 'whoosh' as SfxType, label: 'Whoosh Sweep', desc: 'Noise wind sweep transition', dur: 0.35 },
+                    { type: 'tadaFanfare' as SfxType, label: 'Tada Fanfare', desc: '4-note victory fanfare', dur: 1.2 },
+                    { type: 'drumroll' as SfxType, label: 'Drumroll Sweep', desc: '12-strike drumroll crescendo', dur: 1.0 },
+                    { type: 'laser' as SfxType, label: 'Laser Zap', desc: 'Futuristic laser zap', dur: 0.3 },
+                  ].map((sfx) => (
+                    <div
+                      key={sfx.type}
+                      className="p-2.5 rounded-xl bg-[#181c28] hover:bg-[#202636] border border-[#283044] flex items-center justify-between transition-colors"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <span className="font-bold text-white block text-[11px] truncate">{sfx.label}</span>
+                        <span className="text-[9px] text-slate-400">{sfx.desc}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => playSfx(sfx.type)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer transition-colors"
+                          title="Preview sound"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            createAndAddClip('audio', 'track_sfx', sfx.label, sfx.dur, {
+                              audio: { volume: 0.9, isSfx: true, sfxType: sfx.type },
+                            })
+                          }
+                          className="px-2 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                          title="Add to Track"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Add</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: STICKERS & BADGES ── */}
+          {activeTab === 'stickers' && (
+            <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={() =>
-                  createAndAddClip('audio', 'track_sfx', 'Clock Tick Loop', 5, {
-                    audio: {
-                      volume: 0.85,
-                      isSfx: true,
-                      sfxType: 'clockTick',
-                    },
+                  createAndAddClip('sticker', 'track_timer', '5s Circular Timer', 5, {
+                    width: 140,
+                    height: 140,
+                    x: project.width * 0.82,
+                    y: project.height * 0.46,
+                    gkRole: 'timer',
                   })
                 }
-                className="w-full p-2.5 rounded-xl bg-[#181c28] hover:bg-[#23293a] border border-[#293044] text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-2.5 rounded-xl bg-[#181c28] hover:bg-[#222839] border border-[#2a3246] text-left flex items-center justify-between cursor-pointer"
               >
-                <div>
-                  <span className="font-bold text-white block">Clock Tick (5s)</span>
-                  <span className="text-[10px] text-slate-400">Authentic 1s periodic tick sound</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-r-red-500 flex items-center justify-center font-bold text-amber-300 text-xs">
+                    5
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block">5s Circular Split Timer</span>
+                    <span className="text-[10px] text-slate-400">Blue/red split ring countdown</span>
+                  </div>
                 </div>
-                <Plus className="w-4 h-4 text-blue-400" />
+                <Plus className="w-4 h-4 text-emerald-400" />
               </button>
 
               <button
                 type="button"
                 onClick={() =>
-                  createAndAddClip('audio', 'track_sfx', 'Correct Answer Ding', 1.5, {
-                    audio: {
-                      volume: 0.9,
-                      isSfx: true,
-                      sfxType: 'correctDing',
+                  createAndAddClip('text', 'track_text_q', 'TIME OUT Stamp', 2, {
+                    text: {
+                      content: 'TIME OUT ⏰',
+                      fontFamily: 'Noto Sans Devanagari',
+                      fontSize: 52,
+                      fontWeight: '900',
+                      color: '#ffffff',
+                      backgroundColor: 'rgba(220, 38, 38, 0.95)',
+                      backgroundPadding: 16,
+                      backgroundRadius: 18,
+                      alignment: 'center',
+                      inAnimation: 'pop',
                     },
+                    y: project.height * 0.48,
                   })
                 }
-                className="w-full p-2.5 rounded-xl bg-[#181c28] hover:bg-[#23293a] border border-[#293044] text-left flex items-center justify-between cursor-pointer"
+                className="w-full p-2.5 rounded-xl bg-[#181c28] hover:bg-[#222839] border border-[#2a3246] text-left flex items-center justify-between cursor-pointer"
               >
-                <div>
-                  <span className="font-bold text-white block">Answer Chime</span>
-                  <span className="text-[10px] text-slate-400">Celebration ding tone</span>
+                <div className="flex items-center gap-2">
+                  <div className="px-2 py-1 rounded bg-red-600 text-white font-black text-[10px]">
+                    TIME OUT
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block">TIME OUT Stamp</span>
+                    <span className="text-[10px] text-slate-400">Bold red timeout badge</span>
+                  </div>
                 </div>
-                <Plus className="w-4 h-4 text-blue-400" />
+                <Plus className="w-4 h-4 text-red-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  createAndAddClip('text', 'track_text_opts', 'Correct Checkmark', 2.5, {
+                    text: {
+                      content: '✓ CORRECT ANSWER',
+                      fontFamily: 'Noto Sans Devanagari',
+                      fontSize: 40,
+                      fontWeight: '900',
+                      color: '#ffffff',
+                      backgroundColor: 'rgba(16, 185, 129, 0.95)',
+                      backgroundPadding: 16,
+                      backgroundRadius: 16,
+                      alignment: 'center',
+                      inAnimation: 'zoom',
+                    },
+                    y: project.height * 0.48,
+                  })
+                }
+                className="w-full p-2.5 rounded-xl bg-[#181c28] hover:bg-[#222839] border border-[#2a3246] text-left flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">
+                    ✓
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block">Correct Answer Badge</span>
+                    <span className="text-[10px] text-slate-400">Green victory banner</span>
+                  </div>
+                </div>
+                <Plus className="w-4 h-4 text-emerald-400" />
               </button>
             </div>
           )}
@@ -445,6 +786,8 @@ export const LeftToolbar: React.FC = () => {
                   { type: 'flash', name: 'White Flash', desc: 'Rhythmic flash burst' },
                   { type: 'vignette', name: 'Dark Vignette', desc: 'Cinematic edge shadow' },
                   { type: 'blur', name: 'Gaussian Blur', desc: 'Soft focus blur' },
+                  { type: 'sepia', name: 'Vintage Sepia', desc: 'Warm classic tone' },
+                  { type: 'invert', name: 'Color Invert', desc: 'Negative high-contrast' },
                 ] as Array<{ type: EffectType; name: string; desc: string }>
               ).map((eff) => (
                 <button
@@ -488,6 +831,9 @@ export const LeftToolbar: React.FC = () => {
                   { type: 'zoom', label: 'Zoom Pop' },
                   { type: 'wipe', label: 'Horizontal Wipe' },
                   { type: 'blur', label: 'Blur Dissolve' },
+                  { type: 'flip3d', label: '3D Flip Card' },
+                  { type: 'flashWhite', label: 'Flash White' },
+                  { type: 'glitchCut', label: 'Glitch Cut' },
                 ] as Array<{ type: TransitionType; label: string }>
               ).map((t) => (
                 <button

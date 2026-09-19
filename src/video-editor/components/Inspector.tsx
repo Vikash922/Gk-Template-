@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { KeyframeProperty, TextAnimationType, TransitionType } from '../types';
 import { addOrUpdateKeyframe, removeKeyframe } from '../engine/KeyframeEngine';
+import { speakHindiVoice } from '../engine/SoundFX';
 
 export const Inspector: React.FC = () => {
   const {
@@ -33,6 +34,7 @@ export const Inspector: React.FC = () => {
   } = useEditor();
 
   const [activeTab, setActiveTab] = useState<'content' | 'transform' | 'keyframes' | 'fx'>('content');
+  const [isTestingVoice, setIsTestingVoice] = useState<boolean>(false);
 
   if (!selectedClip) {
     return (
@@ -299,9 +301,39 @@ export const Inspector: React.FC = () => {
                     <option value="slide">Slide Up</option>
                     <option value="pop">Pop Scale</option>
                     <option value="bounce">Bounce</option>
-                    <option value="typewriter">Typewriter</option>
+                    <option value="typewriter">Typewriter (Devanagari)</option>
+                    <option value="flip">3D Flip</option>
+                    <option value="glowPulse">Glow Pulse</option>
+                    <option value="shake">Dynamic Shake</option>
                     <option value="zoom">Zoom In</option>
                   </select>
+                </div>
+
+                {/* GK Reference Highlight Overrides */}
+                <div className="pt-2 border-t border-[#23293c] space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    GK Option Highlights
+                  </label>
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(selectedClip.activeDashed)}
+                        onChange={(e) => updateClip(selectedClip.id, { activeDashed: e.target.checked })}
+                        className="rounded accent-red-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span>Red Dashed Outline (Active Focus)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(selectedClip.isAnswerHighlight)}
+                        onChange={(e) => updateClip(selectedClip.id, { isAnswerHighlight: e.target.checked })}
+                        className="rounded accent-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span>Green Correct Answer Card</span>
+                    </label>
+                  </div>
                 </div>
               </>
             )}
@@ -348,6 +380,172 @@ export const Inspector: React.FC = () => {
                     className="w-full accent-blue-600"
                   />
                 </div>
+
+                {/* CHROMA KEY (Green / Blue Screen Removal) */}
+                <div className="pt-2 border-t border-[#23293c] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Chroma Key (Screen Removal)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedClip.image.chromaKey?.enabled)}
+                      onChange={(e) => {
+                        const existing = selectedClip.image!.chromaKey || {
+                          enabled: false,
+                          keyColor: '#00ff00',
+                          similarity: 0.4,
+                          smoothness: 0.1,
+                          spill: 0.3,
+                        };
+                        updateClip(selectedClip.id, {
+                          image: {
+                            ...selectedClip.image!,
+                            chromaKey: { ...existing, enabled: e.target.checked },
+                          },
+                        });
+                      }}
+                      className="rounded accent-emerald-500 w-4 h-4 cursor-pointer"
+                    />
+                  </div>
+
+                  {selectedClip.image.chromaKey?.enabled && (
+                    <div className="p-2.5 rounded-xl bg-[#161a26] border border-[#262e42] space-y-2.5 text-[10px]">
+                      {/* Key Color Picker & Presets */}
+                      <div>
+                        <label className="text-slate-400 block mb-1">Key Color to Remove</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={selectedClip.image.chromaKey.keyColor || '#00ff00'}
+                            onChange={(e) => {
+                              updateClip(selectedClip.id, {
+                                image: {
+                                  ...selectedClip.image!,
+                                  chromaKey: { ...selectedClip.image!.chromaKey!, keyColor: e.target.value },
+                                },
+                              });
+                            }}
+                            className="w-7 h-7 rounded border border-[#2c354a] bg-transparent cursor-pointer"
+                          />
+                          <div className="flex items-center gap-1 flex-1">
+                            {[
+                              { label: 'Green', hex: '#00ff00', bg: 'bg-green-500' },
+                              { label: 'Blue', hex: '#0000ff', bg: 'bg-blue-600' },
+                              { label: 'Black', hex: '#000000', bg: 'bg-black' },
+                              { label: 'White', hex: '#ffffff', bg: 'bg-white' },
+                            ].map((preset) => (
+                              <button
+                                key={preset.hex}
+                                type="button"
+                                onClick={() => {
+                                  updateClip(selectedClip.id, {
+                                    image: {
+                                      ...selectedClip.image!,
+                                      chromaKey: { ...selectedClip.image!.chromaKey!, keyColor: preset.hex },
+                                    },
+                                  });
+                                }}
+                                className="px-1.5 py-0.5 rounded border border-[#2d364c] text-[9px] hover:border-blue-400 cursor-pointer flex items-center gap-1"
+                              >
+                                <span className={`w-2 h-2 rounded-full ${preset.bg}`} />
+                                <span>{preset.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tolerance / Similarity */}
+                      <div>
+                        <div className="flex justify-between text-slate-400 mb-0.5">
+                          <span>Similarity (Tolerance)</span>
+                          <span className="font-mono text-emerald-400 font-bold">
+                            {Math.round((selectedClip.image.chromaKey.similarity ?? 0.4) * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="0.8"
+                          step="0.02"
+                          value={selectedClip.image.chromaKey.similarity ?? 0.4}
+                          onChange={(e) => {
+                            updateClip(selectedClip.id, {
+                              image: {
+                                ...selectedClip.image!,
+                                chromaKey: {
+                                  ...selectedClip.image!.chromaKey!,
+                                  similarity: parseFloat(e.target.value),
+                                },
+                              },
+                            });
+                          }}
+                          className="w-full accent-emerald-500"
+                        />
+                      </div>
+
+                      {/* Edge Smoothness */}
+                      <div>
+                        <div className="flex justify-between text-slate-400 mb-0.5">
+                          <span>Edge Smoothness</span>
+                          <span className="font-mono text-blue-400 font-bold">
+                            {Math.round((selectedClip.image.chromaKey.smoothness ?? 0.1) * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="0.4"
+                          step="0.01"
+                          value={selectedClip.image.chromaKey.smoothness ?? 0.1}
+                          onChange={(e) => {
+                            updateClip(selectedClip.id, {
+                              image: {
+                                ...selectedClip.image!,
+                                chromaKey: {
+                                  ...selectedClip.image!.chromaKey!,
+                                  smoothness: parseFloat(e.target.value),
+                                },
+                              },
+                            });
+                          }}
+                          className="w-full accent-blue-500"
+                        />
+                      </div>
+
+                      {/* Spill Suppression */}
+                      <div>
+                        <div className="flex justify-between text-slate-400 mb-0.5">
+                          <span>Spill Suppression</span>
+                          <span className="font-mono text-amber-400 font-bold">
+                            {Math.round((selectedClip.image.chromaKey.spill ?? 0.3) * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="0.8"
+                          step="0.05"
+                          value={selectedClip.image.chromaKey.spill ?? 0.3}
+                          onChange={(e) => {
+                            updateClip(selectedClip.id, {
+                              image: {
+                                ...selectedClip.image!,
+                                chromaKey: {
+                                  ...selectedClip.image!.chromaKey!,
+                                  spill: parseFloat(e.target.value),
+                                },
+                              },
+                            });
+                          }}
+                          className="w-full accent-amber-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -376,9 +574,52 @@ export const Inspector: React.FC = () => {
                   />
                 </div>
 
-                {selectedClip.audio.synthText && (
+                {/* Pitch and Speed Controls */}
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">TTS Voiceover Narration</label>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Speed</span>
+                      <span className="font-mono text-white">{(selectedClip.audio.speed ?? 1.0).toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.6"
+                      max="1.8"
+                      step="0.05"
+                      value={selectedClip.audio.speed ?? 1.0}
+                      onChange={(e) =>
+                        updateClip(selectedClip.id, {
+                          audio: { ...selectedClip.audio!, speed: parseFloat(e.target.value) },
+                        })
+                      }
+                      className="w-full accent-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                      <span>Pitch</span>
+                      <span className="font-mono text-white">{(selectedClip.audio.pitch ?? 1.0).toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.7"
+                      max="1.4"
+                      step="0.05"
+                      value={selectedClip.audio.pitch ?? 1.0}
+                      onChange={(e) =>
+                        updateClip(selectedClip.id, {
+                          audio: { ...selectedClip.audio!, pitch: parseFloat(e.target.value) },
+                        })
+                      }
+                      className="w-full accent-purple-500"
+                    />
+                  </div>
+                </div>
+
+                {selectedClip.audio.synthText && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-slate-400 block">TTS Hindi Voiceover Narration</label>
                     <textarea
                       rows={4}
                       value={selectedClip.audio.synthText}
@@ -389,6 +630,46 @@ export const Inspector: React.FC = () => {
                       }
                       className="w-full p-2 rounded-lg bg-[#181c28] border border-[#2a3246] text-white text-xs leading-relaxed"
                     />
+
+                    {/* Test Voice Button */}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!selectedClip.audio?.synthText) return;
+                          setIsTestingVoice(true);
+                          try {
+                            await speakHindiVoice(
+                              selectedClip.audio.synthText,
+                              selectedClip.audio.speed || 1.0,
+                              selectedClip.audio.pitch || 1.0
+                            );
+                          } finally {
+                            setIsTestingVoice(false);
+                          }
+                        }}
+                        disabled={isTestingVoice}
+                        className="flex-1 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/40 text-blue-300 border border-blue-500/40 font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>{isTestingVoice ? 'Speaking...' : 'Test Voice Preview'}</span>
+                      </button>
+
+                      {isTestingVoice && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (typeof window !== 'undefined' && window.speechSynthesis) {
+                              window.speechSynthesis.cancel();
+                            }
+                            setIsTestingVoice(false);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-red-600/20 text-red-300 border border-red-500/30 font-semibold cursor-pointer"
+                        >
+                          Stop
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
@@ -576,6 +857,9 @@ export const Inspector: React.FC = () => {
                 <option value="zoom">Zoom</option>
                 <option value="wipe">Wipe</option>
                 <option value="blur">Blur</option>
+                <option value="flip3d">3D Flip Card</option>
+                <option value="flashWhite">Flash White</option>
+                <option value="glitchCut">Glitch Cut</option>
               </select>
             </div>
 
@@ -596,6 +880,9 @@ export const Inspector: React.FC = () => {
                 <option value="slideRight">Slide Right</option>
                 <option value="slideDown">Slide Down</option>
                 <option value="zoom">Zoom</option>
+                <option value="flip3d">3D Flip Card</option>
+                <option value="flashWhite">Flash White</option>
+                <option value="glitchCut">Glitch Cut</option>
               </select>
             </div>
 

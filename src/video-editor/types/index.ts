@@ -29,7 +29,10 @@ export type TransitionType =
   | 'zoom'
   | 'push'
   | 'wipe'
-  | 'blur';
+  | 'blur'
+  | 'flip3d'
+  | 'flashWhite'
+  | 'glitchCut';
 
 export interface Transition {
   type: TransitionType;
@@ -49,7 +52,9 @@ export type EffectType =
   | 'shake'
   | 'flash'
   | 'glitch'
-  | 'rgbSplit';
+  | 'rgbSplit'
+  | 'sepia'
+  | 'invert';
 
 export interface EffectConfig {
   type: EffectType;
@@ -66,7 +71,10 @@ export type TextAnimationType =
   | 'typewriter'
   | 'wipe'
   | 'scale'
-  | 'blur';
+  | 'blur'
+  | 'flip'
+  | 'glowPulse'
+  | 'shake';
 
 export interface TextElement {
   content: string;
@@ -92,6 +100,14 @@ export interface TextElement {
   animationDuration?: number;
 }
 
+export interface ChromaKeyConfig {
+  enabled: boolean;
+  keyColor: string; // Hex color e.g. '#00ff00'
+  similarity: number; // 0 to 1 (tolerance threshold)
+  smoothness: number; // 0 to 1 (edge feathering)
+  spill: number; // 0 to 1 (green spill suppression)
+}
+
 export interface ImageElement {
   src: string;
   topic?: string;
@@ -102,7 +118,19 @@ export interface ImageElement {
   borderRadius?: number;
   shadowBlur?: number;
   shadowColor?: string;
+  chromaKey?: ChromaKeyConfig;
+  blendMode?: string;
 }
+
+export type SfxType =
+  | 'clockTick'
+  | 'correctDing'
+  | 'timeoutBuzzer'
+  | 'pop'
+  | 'whoosh'
+  | 'tadaFanfare'
+  | 'drumroll'
+  | 'laser';
 
 export interface AudioElement {
   src?: string;
@@ -111,19 +139,21 @@ export interface AudioElement {
   fadeInDuration?: number;
   fadeOutDuration?: number;
   speed?: number; // 0.5 to 2.0
+  pitch?: number;
   synthText?: string; // Hindi/English TTS speech synthesis
   synthLang?: string;
   synthRate?: number;
   isSfx?: boolean;
-  sfxType?: 'clockTick' | 'correctDing' | 'timeoutBuzzer' | 'pop' | 'whoosh';
+  sfxType?: SfxType;
 }
 
 export interface VideoElement {
   src?: string;
-  speed: number;
+  speed?: number;
   volume: number;
   crop?: { x: number; y: number; width: number; height: number };
   filters?: EffectConfig[];
+  chromaKey?: ChromaKeyConfig;
 }
 
 export interface Clip {
@@ -145,6 +175,7 @@ export interface Clip {
   rotation: number;
   opacity: number;
   blur?: number;
+  blendMode?: string;
 
   // Element specific data
   text?: TextElement;
@@ -161,6 +192,14 @@ export interface Clip {
 
   // Effects
   effects: EffectConfig[];
+
+  // GK reference animation flags
+  activeDashed?: boolean; // Red dashed outline around option
+  isAnswerHighlight?: boolean; // Green answer highlight
+  dashedActiveStart?: number; // Timeline second when red dashed border activates
+  dashedActiveEnd?: number; // Timeline second when red dashed border deactivates
+  revealStart?: number; // Timeline second when correct option turns green
+  isCorrectOption?: boolean; // True if this option is the correct answer
 
   // GK specific metadata
   gkQuestionId?: string;

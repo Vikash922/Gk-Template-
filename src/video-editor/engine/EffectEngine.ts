@@ -35,6 +35,12 @@ export function buildCanvasFilterString(effects: EffectConfig[]): string {
       case 'grayscale':
         filters.push(`grayscale(${Math.round(val * 100)}%)`);
         break;
+      case 'sepia':
+        filters.push(`sepia(${Math.round(val * 100)}%)`);
+        break;
+      case 'invert':
+        filters.push(`invert(${Math.round(val * 100)}%)`);
+        break;
       default:
         break;
     }

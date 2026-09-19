@@ -247,6 +247,8 @@ export function generateTimelineFromQuestions(
         animationDuration: 0.3,
       };
 
+      const revealTimestamp = cardStartTime + totalCardTime - settings.revealTime;
+
       const optClip: Clip = {
         id: `opt_${opt.key}_${q.id || qIndex}_${Date.now()}`,
         trackId: 'track_text_opts',
@@ -266,9 +268,13 @@ export function generateTimelineFromQuestions(
         effects: [],
         gkQuestionId: q.id,
         gkRole: `option${opt.key}` as any,
+        dashedActiveStart: optStartTime,
+        dashedActiveEnd: optStartTime + settings.optionIntervalTime,
+        revealStart: revealTimestamp,
+        isCorrectOption: isThisCorrect,
       };
 
-      // If correct answer, add keyframe at reveal time to turn vibrant green!
+      // If correct answer, add keyframe at reveal time to scale up with victory pop!
       if (isThisCorrect) {
         const revealOffset = totalCardTime - settings.revealTime - (optStartTime - cardStartTime);
         optClip.keyframes.push({
